@@ -2,8 +2,6 @@
 
 A simple telegram bot to help with the moderation of the whalepool telegram channels
 
-![Profile pic](https://imgur.com/a/zSAhq)
-
 ## To run
 You must export some envionment variables:  
 
@@ -13,4 +11,6 @@ export NATALIA_BOT_USERNAME="@My_Natalia_Bot"
 export NATALIA_BOT_TOKEN="ewr3-rf-my-df-crazy-f4-bot-rfd-token"
 ```
 
-For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram 
+For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram   
+
+![Profile pic](http://i.imgur.com/iIUSRDG.jpg)
