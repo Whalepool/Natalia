@@ -40,7 +40,7 @@ logger.info("Running "+sys.argv[0])
 # Mongodb 
 """
 client  = MongoClient('mongodb://localhost:27017')
-db      = client.whalepool
+db      = client.natalia_tg_bot
 
 
 """
