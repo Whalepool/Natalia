@@ -3,13 +3,10 @@
 A simple telegram bot to help with the moderation of the whalepool telegram channels
 
 ## To run
-You must export some envionment variables:  
+`cp config.sample.yaml config.yaml`
+Edit the config.yaml file
 
-```shell
-export NATALIA_BOT_DIR='/home/username/path/to/natalia/'
-export NATALIA_BOT_USERNAME="@My_Natalia_Bot"
-export NATALIA_BOT_TOKEN="ewr3-rf-my-df-crazy-f4-bot-rfd-token"
-```
+`python3.6 natalia.py`
 
 For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram   
 
