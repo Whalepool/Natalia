@@ -1,4 +1,4 @@
-# Natalia Whalepool Telegram bot 
+# Natalia, a Telegram Administrative assistant bot by @whalepoolbtc - https://whalepool.io   
 
 A simple telegram bot to help with the moderation of the telegram channels utilizing [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot)
 
