@@ -16,54 +16,83 @@ import sys
 import json
 import random
 import datetime
+from dateutil.relativedelta import relativedelta
 import re 
 import os
 import sys
+import yaml
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
-
 from PIL import Image
 
 
-##################################
-# Configure Logging
+PATH = os.path.dirname(os.path.abspath(__file__))
 
+"""
+# Configure Logging
+"""
 FORMAT = '%(asctime)s -- %(levelname)s -- %(module)s %(lineno)d -- %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger('root')
 logger.info("Running "+sys.argv[0])
 
 
-def check_envs(envars):
-    # Check ENV variables
-    errors = 0 
-    for v in envars:
-        if os.environ.get(v) is not None:
-            logger.info('Found env var: '+v)
-            pass
-        else:
-            errors += 1 
-            logger.info('Please set a '+v+' envionment variable.')
-
-    if errors > 0:
-        sys.exit()
-
-
-
-#################################
-#			CONFIG 		
-check_envs(['NATALIA_BOT_DIR', 'NATALIA_BOT_USERNAME', 'NATALIA_BOT_TOKEN'])
-
-
+"""
 # Mongodb 
-client      = MongoClient('mongodb://localhost:27017')
-db          = client.whalepool
+"""
+client  = MongoClient('mongodb://localhost:27017')
+db      = client.whalepool
 
-# Local dir of Natalia execution eg: /home/username/natalia 
-PATH        = os.environ.get('NATALIA_BOT_DIR')
 
-# Botname / Token
-BOTNAME     = os.environ.get('NATALIA_BOT_USERNAME')
-TELEGRAM_BOT_TOKEN = os.environ.get('NATALIA_BOT_TOKEN')
+"""
+#	Load the config file
+#	Set the Botname / Token
+"""
+config_file = PATH+'/config.yaml'
+my_file     = Path(config_file)
+if my_file.is_file():
+	with open(config_file) as fp:
+	    config = yaml.load(fp)
+else:
+	pprint('config.yaml file does not exists. Please make from config.sample.yaml file')
+	sys.exit()
+
+
+BOTNAME                     = config['NATALIA_BOT_USERNAME']
+TELEGRAM_BOT_TOKEN          = config['NATALIA_BOT_TOKEN']
+FORWARD_PRIVATE_MESSAGES_TO = config['BOT_OWNER_ID'] 
+ADMINS                      = config['ADMINS']
+
+EXTRA_STOPWORDS    = config['WORDCLOUD_STOPWORDS']
+FORWARD_URLS       = r""+config['FORWARD_URLS']
+SHILL_DETECTOR     = r""+config['SHILL_DETECTOR']
+COUNTER_SHILL      = []
+
+for s in config['COUNTER_SHILL']:
+	COUNTER_SHILL.append({
+	'title': s['title'],
+	'regex': r""+s['match'],
+	'link' : s['link']
+	})
+
+MESSAGES = {}
+MESSAGES['welcome']         = config['MESSAGES']['welcome']
+MESSAGES['welcomewomen']    = config['MESSAGES']['welcome_special']
+MESSAGES['goodbye']         = config['MESSAGES']['goodbye']
+MESSAGES['pmme']            = config['MESSAGES']['pmme']
+MESSAGES['start']           = config['MESSAGES']['start']
+MESSAGES['admin_start']     = config['MESSAGES']['admin_start']
+MESSAGES['about']           = config['MESSAGES']['about']
+MESSAGES['rules']           = config['MESSAGES']['rules']
+MESSAGES['teamspeak']       = config['MESSAGES']['teamspeak']
+MESSAGES['telegram']        = config['MESSAGES']['telegram']
+MESSAGES['livestream']      = config['MESSAGES']['livestream']
+MESSAGES['exchanges']       = config['MESSAGES']['exchanges']
+MESSAGES['shill']           = config['MESSAGES']['shill']  
+MESSAGES['teamspeakbadges'] = config['MESSAGES']['teamspeakbadges']
+MESSAGES['fomobot']         = config['MESSAGES']['fomobot']
+MESSAGES['donate']          = config['MESSAGES']['donate']
+
+ADMINS_JSON                 = config['MESSAGES']['admins_json']
 
 
 
@@ -71,42 +100,43 @@ TELEGRAM_BOT_TOKEN = os.environ.get('NATALIA_BOT_TOKEN')
 WP_ROOM     = -1001012147388      # Whalepool
 SP_ROOM     = -1001120581521      # Shitpool
 WP_ADMIN    = -238862165          # Whalepool Admin
-TEST_ROOM   = -1001137380400      # Test room
+MH_ROOM     = -1001213548615      # Master Holder room
+TEST_ROOM   = -1001223115449     # Test room
+WP_WOMENS   = -1001248205448      # Whalepool Womens
 WP_FEED     = "@whalepoolbtcfeed" # Whalepool Feed
+SP_FEED     = "@shitcoincharts" # shitpool feed
 
 ROOM_ID_TO_NAME = {
 	WP_ROOM : 'Whalepool',
 	SP_ROOM : 'Shitpool',
-	WP_ADMIN: 'Whalepool Mod room'
+	WP_ADMIN: 'Whalepool Mod room',
+	MH_ROOM : 'Whalepool Trading Dojo',
+	TEST_ROOM: 'Test room',
+	WP_WOMENS : 'Whalepool Womens',
+	WP_FEED : 'Whalepool Feed channel',
+	SP_FEED : 'Shitpool Feed channel'
 }
 
 # Rooms where chat/gifs/etc is logged for stats etc 
 LOG_ROOMS = [ WP_ROOM, SP_ROOM, TEST_ROOM ]
 
-# Admin of Natalia 
-ADMINS = [ 
-	61697695,  # flibbr
-	124588907, # spofas
-	172018489, # saj
-	136921994, # boxer
-	174486191  # pysiek
-]
-
-# Chat id of where to send private messages to natalia to "help i am banned.." etc 
-FORWARD_PRIVATE_MESSAGES_TO = 61697695 #flibbr
 
 # Storing last 'welcome' message ids 
 PRIOR_WELCOME_MESSAGE_ID = {
 	WP_ROOM   : 0,
 	SP_ROOM   : 0,
-	TEST_ROOM : 0
+	MH_ROOM   : 0,
+	TEST_ROOM : 0,
+	WP_WOMENS : 0
 }
 
 # Storing last 'removal' of uncompress images, message ids
 LASTUNCOMPRESSED_IMAGES = { 
 	WP_ROOM   : 0,
 	SP_ROOM   : 0,
-	TEST_ROOM : 0
+	MH_ROOM   : 0,
+	TEST_ROOM : 0,
+	WP_WOMENS : 0
 }
 
 # Hashtags that forward messages to specific channels
@@ -115,91 +145,7 @@ forward_hashtags = {
 	'#community' : WP_FEED
 }
 
-# Allowed URLS to auto-forward to feed room
-forward_urls = r"reddit.com(?!\/r\/ethtrader)|medium.com|marketwatch.com|investopedia.com|forklog.com|businessinsider|cnbc.com|newsbtc.com|ledgerx.com|cftc.gov|bitcointicker.co|coin.dance|bloomberg.com|tradingview.com|cointelegraph.com|coindesk.com|github.com|youtube.com|bitsonline.com"
 
-# List of admins that users can request 
-ADMINS_JSON = { 
-	"@flibbr" 	  : { 
-		"adminOf" : "Teamspeak (Trading Dojo) / Whalepool Telegram",
-		"about"   : "Low tolerance for Low IQ users degrading the telegram chat & mindless chatter on teamspeak"
-	},
-	"@Mayvune"    : { 
-		"adminOf" : "Whalepool Telegram & TeamSpeak Mod",
-		"about"   : "We are all mad here. DOOM is coming!"
-	},
-	"@gonzoucab"  : { 
-		"adminOf" : "Whalepool Telegram",
-		"about"   : "No trial, no nothing."
-	},
-	"@notdao"     : {
-		"adminOf" : "Shitpool Telegram",
-		"about"   : "Likes: information. Dislikes: misinformation"
-	},
-	"@wawin"     : {
-		"adminOf" : "Whalepool Telegram",
-		"about"   : "I'm a simple man; I see shill post, I ban."
-	},
-	"@grammi"     : {
-		"adminOf" : "Whalepool Telegram",
-		"about"   : "no gamble... no future"
-	},
-	"@Saj\_le\_Great"     : {
-		"adminOf" : "Whalepool Telegram",
-		"about"   : "All your dips belong to me i BTFD before it was kewl ."
-	},
-	"@cshrem"     : {
-		"adminOf" : "Whalepool Telegram",
-		"about"   : "Please short Bitcoin, we need moar rocket fuel."
-	}
-}
-
-# Welcome/Goodbye message templates 
-MESSAGES = {
-      "welcome": [
-      	  "Hi there %s you big bad crypto boy. I'm the Whalepool secretary(bot). Send me a PM (@WPrules_bot) to learn how to push my buttons & get to know the rules.",
-      	  "Hi %s I'm Natalia, resident chat secretary. I do exactly as I am told like a good girl. PM me (@WPrules_bot) if you want to know the rules i play by.",
-      	  "%s! Hi! Welcome, I live to serve. PM me (@WPrules_bot) so we can get more aquainted with my rules.",
-      	  "Hi there %s, I'm Natalia, group secretary. You dont have to tie me up to control me, just send me a PM (@WPrules_bot) to get house rules."
-      ],
-      "goodbye": [
-      	"Smells better without ya %s",
-      	"The average net worth of this group just shot up when %s left",
-      	"goodbye %s. It was fun whilte it lasted",
-      	"see ya %s, my sweet love"
-      ],
-      "pmme": [
-      	"Naughty naughty %s, you know we can't talk dirty in public. PM me for that kind of talk & house rules.",
-      	"Sorry %s, I'd love to service you in public, but Telegram only lets me do you in private. PM me for house rules.",
-      	"Sorry %s I'm a shy bot so you have to PM to use my functions & house rules.",
-      	"%s, I'm a shy girl, I like to do these things in private. Can you PM me for house rules & our safe word?", 
-      	"%s, some things a better left for behind closed doors. PM me for house rules." 
-      ],
-      "countershill": {
-      	  "default": "BEWARE: UNAUTHORISED LINKS MAY CONTAIN VIRUSES, ONLY USE OFFICIAL WHALEPOOL URLS\n\nWe recommend users point people to https://whalepool.io/exchanges - Here we recommend a variety of exchanges and platforms. The affiliate links are shared whalepool.io links so any revnue generated to go back into the community your using right now to help make it better. Thanks.",
-      	  "simplefx": "BEWARE: UNAUTHORISED LINKS MAY CONTAIN VIRUSES, ONLY USE OFFICIAL WHALEPOOL URLS\n\nWe recommend users point people to http://simplefx.whalepool.io - This a community Whalepool.io based affiliate link. Using this link allows Whalepool.io to use revnue generated to go back into the community your using right now to help make it better. If you want to check out other alternative exchanges/brokers, you can also look at at https://whalepool.io/exchanges Thanks.",
-      	  "onebroker": "BEWARE: UNAUTHORISED LINKS MAY CONTAIN VIRUSES, ONLY USE OFFICIAL WHALEPOOL URLS\n\nWe recommend users point people to http://1broker.whalepool.io - This a community whalepool.io based affiliate link. Using this link allows whalepool.io to use revnue generated to go back into the community your using right now to help make it better. If you want to check out other alternative exchanges/brokers, you can also look at at https://whalepool.io/exchanges Thanks.",
-      	  "bitmex": "BEWARE: UNAUTHORISED LINKS MAY CONTAIN VIRUSES, ONLY USE OFFICIAL WHALEPOOL URLS\n\nWe recommend users point people to http://bitmex.whalepool.io - This a community whalepool.io based affiliate link. Using this link allows whalepool.io to use revnue generated to go back into the community your using right now to help make it better. If you want to check out other alternative exchanges/brokers, you can also look at at https://whalepool.io/exchanges Thanks."
-      },
-      "start": "Hi %s, Welcome to Whalepool\nPlease click one of the links to see how i can help you:\n\n/rules  - See Whalepool Rules\n/about - about us\n/admins - See list of admins to contact for help.\n/teamspeak - How to connect to teamspeak\n/telegram - Our telegram Channels\n/livestream - Listen to use live on youtube\n/fomobot - Learn about our Bitcoin/Crypto telegram bot\n/exchanges - See where we recommend to trade\n/donation - Make a donation",
-      "about": "*About Whalepool*\n\nWe are a community trades & crypto lovers.\nFollow us on twitter: [@whalepool](https://twitter.com/whalepool)\nTalk to us on /teamspeak\nJoin our /telegram channels\nListen to our youtube livestream [http://livestream.whalepool.io](http://livestream.whalepool.io)\n\n/start - to go back to home",
-      "wprules": "*Whalepool House Rules*\n\n*Bannable offenses*\n1) Don't post shill links or spam\n2) Don't scam or push scamcoins (unless in @shitpool) \n3) Don't post excessive unrelated gifs. Yes. Gifs are cool. No we don't want to see your whole collection.\n\n*Group Guidelines*\n1) Be on topic\n2) Contribute real content, don't overly forward or just shill your Twitter/YouTube account\n3) Don't blame other peoples ideas for your trading losses\n4) Make arguments of substance, not personal insults/ad hominems\n\n/start - to go back to home",
-      "teamspeak": "[Whalepool Teamspeak](https://whalepool.io/connect/teamspeak) is our hosted voice chat.\nWe have 2 active rooms.\n\n*Freedom room*\nFor loose general crypto & non crypto related discussion\n\n*Trading Dojo*\nFor a quieter more price action focused voice chat\n\nDownload Teamspeak here: [https://www.teamspeak.com/downloads](https://www.teamspeak.com/downloads)\nConnect to: ts.whalepool.io or 158.69.115.146:50128\nMore connection instructions available here: [https://whalepool.io/connect/teamspeak](https://whalepool.io/connect/teamspeak)\n\n/start - to go back to home",
-      "telegram": "*Whalepool main Chat telegram channels*:\n[Whalepool Chat](https://t.me/whalepoolbtc)\n^BTC/ETH (little LTC/XMR/ETC etc) - Mostly chat about the major cryptos\n[Shitpool Chat](https://t.me/shitpool)\n^Discussion about lesser known alts, icos, tokens, crowdsales.. etc\n\n*Non Chat - Feed/Broadcast channels*:\n[Whalepool Feed](https://t.me/whalepoolbtcfeed)\n^Feed from the whalepool channel\n[Shitpool Feed](https://t.me/shitcoincharts)\n^Broadcast (non chat) feed about altcoins on the move\n\n/start - to go back to home",
-      "livestream": "*Whalepool Live Stream*\nListen to us live on Youtube\n[http://livestream.whalepool.io](http://livestream.whalepool.io)\n\n/start - to go back to home",
-      "fomobot" : "*Whalepool Official FOMO BOT*\n\nFomo Bot is the official Whalepool Crypto market information bot. You can use this bot to query a whole range of useful market data.\n\nKeep in mind developing & running bots takes time & effort - Feel free to make a /donation\n\nStart a conversation with @FOMO\_bot & begin to unlock your potential.\n\nYou can also follow [@botfomo](https://twitter.com/botfomo) on twitter\n\n/start - to go back to home",
-      "exchanges" : "*Whalepool Recommended Exchanges*\nFrom our experience, we only recommend trading on the following exchanges:\n\n*Spot Trading BTC/Alts*\n[Bitfinex](http://bitfinex.whalepool.io) - Proven track record. Great staff. The most liquid BTCUSD market. Find Bitfinex reps on /teamspeak also.\n\n*Bitcoin Futures*\n[Bitmex](http://bitmex.whalepool.io) - Proven track record, available in the whalepool /telegram chat also. A great platform with high leverage available\n\n*Forex/Commodity/Stocks*\n[1broker](http://1broker.whalepool.io) - Without a doubt, the cheapest & best CFD platform to use with your bitcoin. Including copy trade features. Proven track record. 1broker reps also available on /teamspeak\n\n/start - to go back to home",
-
-      # "wprules": "*Whalepool House Rules*\n\n*Bannable offenses*\n1) Don't post shill links or spam\n2) Don't scam or push scamcoins (unless in @shitpool) \n3) Don't post excessive unrelated gifs. Yes. Gifs are cool. No we don't want to see your whole collection.\n\n*Group Guidelines*\n1) Be on topic\n2) Contribute real content, don't overly forward or just shill your Twitter/YouTube account\n3) Don't blame other peoples ideas for your trading losses\n5) Make arguments of substance, not personal insults/ad hominems",
-      "signature": "\n\nJoin us on our [Teamspeak](https://whalepool.io/connect/teamspeak) and chat to us vocally.\n\nOur Telegram Rooms:\n[Whalepool Telegram Chat](http://telegram.whalepool.io)\n[Whalepool Telegram Botfeed](https://telegram.me/whalepoolbtcfeed)\n\nWebsite: [whalepool.io](http://whalepool.io)\nTwitter: [@whalepool](http://twitter.com/whalepool\nSubscribe to us on [WhalePool Youtube](https://www.youtube.com/channel/UCSAXsgdvfiS9WqAxwjMm8aQ):)",
-      "donate": "If you would like to support Whalepool.io, please donate to:\n\nBitcoin: 175oRbKiLtdY7RVC8hSX7KD69WQs8PcRJA\n\nPlease be sure to let us know you donated :)",
-
-      "admin_start": "%s, this is your admin control: \n\n /topgif - post the top gif to whalepool + feed\n/topgifposters - post who are the top 5 gif posters to whalepool\n/todayinwords - Today in words...\n/todaysusers - Wordcloiud of whos active today"
-}
-
-
-# Stop words for wordcloud 
-EXTRA_STOPWORDS  = ['will','lol','need','BTC','bitcoin','new','one','see','yeah','good','Im','make','now','http','https','go','twitter','other','also','say']
 
 
 
@@ -254,6 +200,7 @@ def getid(bot, update):
 # Welcome message 
 def start(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	user_id = update.message.from_user.id 
@@ -266,7 +213,12 @@ def start(bot, update):
 		msg = random.choice(MESSAGES['pmme']) % (name)
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
-		msg = MESSAGES['wprules']
+		msg = MESSAGES['rules']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'start', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		msg = bot.sendMessage(chat_id=chat_id, text=(MESSAGES['start'] % name),parse_mode="Markdown",disable_web_page_preview=1)
 
 		if user_id in ADMINS:
@@ -276,6 +228,7 @@ def start(bot, update):
 
 def about(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -286,11 +239,18 @@ def about(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['about']
+
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'about', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def rules(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -300,12 +260,18 @@ def rules(bot, update):
 		msg = random.choice(MESSAGES['pmme']) % (name)
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
-		msg = MESSAGES['wprules']
+		msg = MESSAGES['rules']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'rules', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def admins(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -325,11 +291,16 @@ def admins(bot, update):
 			msg += "\n\n"
 		msg += "/start - to go back to home"
 
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'admins', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def teamspeak(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -340,13 +311,39 @@ def teamspeak(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['teamspeak']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'teamspeak', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendSticker(chat_id=chat_id, sticker="CAADBAADqgIAAndCvAiTIPeFFHKWJQI", disable_notification=False)
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
+def teamspeakbadges(bot, update):
+
+	user_id = update.message.from_user.id 
+	chat_id = update.message.chat.id
+	message_id = update.message.message_id
+	name = get_name(update)
+	logger.info("/teamspeakbadges - "+name)
+
+	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
+		msg = random.choice(MESSAGES['pmme']) % (name)
+		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
+	else:
+		msg = MESSAGES['teamspeakbadges']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'teamspeakbadges', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
+		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
+
 		
 def telegram(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -357,11 +354,17 @@ def telegram(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['telegram']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'telegram', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def livestream(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -372,12 +375,18 @@ def livestream(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['livestream']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'livestream', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendSticker(chat_id=chat_id, sticker="CAADBAADcwIAAndCvAgUN488HGNlggI", disable_notification=False)
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def fomobot(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -388,11 +397,17 @@ def fomobot(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['fomobot']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'fomobot', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
 
 def exchanges(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -403,12 +418,18 @@ def exchanges(bot, update):
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
 		msg = MESSAGES['exchanges']
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'exchanges', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendMessage(chat_id=chat_id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
-		bot.forwardMessage(chat_id=WP_ADMIN, from_chat_id=chat_id, message_id=message_id)
+		# bot.forwardMessage(chat_id=WP_ADMIN, from_chat_id=chat_id, message_id=message_id)
 
 
 def donation(bot, update):
 
+	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	name = get_name(update)
@@ -418,11 +439,43 @@ def donation(bot, update):
 		msg = random.choice(MESSAGES['pmme']) % (name)
 		bot.sendMessage(chat_id=chat_id,text=msg,reply_to_message_id=message_id, parse_mode="Markdown",disable_web_page_preview=1) 
 	else:
+
+		timestamp = datetime.datetime.utcnow()
+		info = { 'user_id': user_id, 'request': 'donation', 'timestamp': timestamp }
+		db.pm_requests.insert(info)
+
 		bot.sendPhoto(chat_id=chat_id, photo="AgADBAADlasxG4uhCVPAkVD5G4AaXgtKXhkABL8N5jNhPaj1-n8CAAEC",caption="Donations by bitcoin to: 175oRbKiLtdY7RVC8hSX7KD69WQs8PcRJA")
 
 
 ####################################################
 # ADMIN FUNCTIONS
+
+@restricted
+def topstickers(bot,update):	
+
+	user_id = update.message.from_user.id 
+	chat_id = update.message.chat.id
+
+	start = datetime.datetime.today().replace(hour=0,minute=0,second=0)
+	start = start - relativedelta(days=3)
+
+	pipe = [ 
+		{ "$match": { 'timestamp': {'$gt': start } } }, 
+		{ "$group": { "_id": "$sticker_id", "total": { "$sum": 1 }  } }, 
+		{ "$sort": { "total": -1 } }, 
+		{ "$limit": 3 }   
+	]
+	gifs = list(db.natalia_stickers.aggregate(pipe))
+
+	bot.sendMessage(chat_id=update.message.chat_id, text="Posting... sometimes this can cause the telegram api to 'time out' ? so won't complete posting but trying anyway.." )
+	bot.sendMessage(chat_id=WP_ROOM, text="Whalepool most popular 3 stickers in the last 3 days are..." )
+	for g in gifs:
+		pprint(g)
+		bot.sendMessage(chat_id=WP_ROOM, text="with "+str(g['total'])+" posts..")
+		bot.sendSticker(chat_id=WP_ROOM, sticker=g['_id'], disable_notification=False)
+		time.sleep(5)
+	bot.sendMessage(chat_id=update.message.chat_id, text="message has been posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
+
 
 @restricted
 def topgif(bot,update):
@@ -454,6 +507,7 @@ def topgifposters(bot, update):
 	msg = bot.sendMessage(chat_id=WP_ROOM, text=msg )
 	bot.forwardMessage(chat_id=chat_id, from_chat_id=WP_ROOM, message_id=msg.message_id)
 	bot.sendMessage(chat_id=chat_id, text="message has been posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
+
 
 
 @restricted
@@ -546,6 +600,178 @@ def todaysusers(bot, update):
 	os.remove(PATH_USERNAMES)
 
 
+@restricted 
+def promotets(bot, update):
+
+	pprint('promotets...')
+
+	chat_id = update.message.chat_id
+	name = get_name(update)
+	fmsg = re.findall( r"\"(.*?)\"", update.message.text)
+
+	if len(fmsg) > 0:
+
+		# rooms = [WP_ROOM]
+		rooms = [WP_ROOM, SP_ROOM, MH_ROOM, WP_FEED, SP_FEED]
+
+		for r in rooms:
+
+			message = fmsg[0]
+			bot.sendSticker(chat_id=r, sticker="CAADBAADcwIAAndCvAgUN488HGNlggI", disable_notification=False)
+			msg = bot.sendMessage(chat_id=r, parse_mode="Markdown", text=fmsg[0]+"\n-------------------\n*/announcement from "+name+"*" )
+
+
+			if r in [WP_ROOM, SP_ROOM, MH_ROOM]: 
+				bot.pin_chat_message(r, msg.message_id, disable_notification=True)
+
+			bot.sendMessage(chat_id=r, parse_mode="Markdown", text="Message me ("+BOTNAME.replace('_','\_')+") - to see details on how to connect to [teamspeak](https://whalepool.io/connect/teamspeak) also listen in to the listream here: livestream.whalepool.io", disable_web_page_preview=True )
+			bot.sendMessage(chat_id=chat_id, parse_mode="Markdown", text="Broadcast sent to "+ROOM_ID_TO_NAME[r])
+
+			
+
+	else:
+		bot.sendMessage(chat_id=chat_id, text="Please incldue a message in quotes to spam/shill the teamspeak message" )
+
+	 
+@restricted
+def shill(bot, update):
+
+	chat_id = update.message.chat_id
+	name = get_name(update)
+
+	bot.sendMessage(chat_id=WP_ADMIN, parse_mode="Markdown", text=name+" just shilled")
+
+	rooms = [WP_ROOM, SP_ROOM, WP_FEED, SP_FEED]
+
+	for r in rooms:
+		bot.sendMessage(chat_id=r, parse_mode="Markdown", text=MESSAGES['shill'],disable_web_page_preview=1)
+		bot.sendMessage(chat_id=chat_id, parse_mode="Markdown", text="Shilled in "+ROOM_ID_TO_NAME[r])
+	
+
+
+@restricted
+def commandstats(bot, update):
+	chat_id = update.message.chat_id
+	start = datetime.datetime.today().replace(day=1,hour=0,minute=0,second=0)
+	# start = start - relativedelta(days=30)
+
+	pipe = [ 
+		{ "$match": { 'timestamp': {'$gt': start } } }, 
+		{ "$group": { 
+			"_id": { 
+				"year" : { "$year" : "$timestamp" },        
+				"month" : { "$month" : "$timestamp" },        
+				"day" : { "$dayOfMonth" : "$timestamp" },
+				"request": "$request"
+			},
+			"total": { "$sum": 1 }  
+			} 
+		}, 
+		{ "$sort": { "total": -1  } }, 
+		# { "$limit": 3 }   
+	]
+	res = list(db.pm_requests.aggregate(pipe))
+
+	output = {}
+	totals = {}
+
+	for r in res: 
+
+		key = r['_id']['day']
+		if not(key in output):
+			output[key] = {}
+
+		request = r['_id']['request']
+		if not(request in output[key]):
+			output[key][r['_id']['request']] = 0 
+
+		if not(request in totals):
+			totals[request] = 0
+
+		output[key][r['_id']['request']] += r['total']
+		totals[request] += r['total']
+
+
+	reply = "*Natalia requests since the start of the month...*\n"
+	for day in sorted(output.keys()):
+		reply += "--------------------\n"
+		reply += "*"+str(day)+"*\n"
+
+		for request, count in output[day].items():
+			reply += request+" - "+str(count)+"\n"
+
+			
+	reply += "--------------------\n"
+	reply += "*Totals*\n"
+	for request in totals:
+		reply += request+" - "+str(totals[request])+"\n"
+
+
+	bot.sendMessage(chat_id=chat_id, text=reply, parse_mode="Markdown" )
+
+
+@restricted 
+def joinstats(bot,update):
+
+	chat_id = update.message.chat_id
+	start = datetime.datetime.today().replace(day=1,hour=0,minute=0,second=0)
+	# start = start - relativedelta(days=30)
+
+	pipe = [ 
+		{ "$match": { 'timestamp': {'$gt': start } } }, 
+		{ "$group": { 
+			"_id": {     
+				"day" : { "$dayOfMonth" : "$timestamp" },
+				"chat_id": "$chat_id"
+			},
+			"total": { "$sum": 1 }  
+			} 
+		}, 
+		{ "$sort": { "total": -1  } }, 
+		# { "$limit": 3 }   
+	]
+	res = list(db.room_joins.aggregate(pipe))
+
+	output = {}
+	totals = {}
+
+	for r in res: 
+
+		key = r['_id']['day']
+		if not(key in output):
+			output[key] = {}
+
+		roomid = r['_id']['chat_id']
+		if not(roomid in output[key]):
+			output[key][roomid] = 0 
+
+		if not(roomid in totals):
+			totals[roomid] = 0
+
+		output[key][roomid] += r['total']
+		totals[roomid] += r['total']
+
+
+
+	reply = "*Channel Joins since the start of the month...*\n"
+	for day in sorted(output.keys()):
+		reply += "--------------------\n"
+		reply += "*"+str(day)+"*\n"
+
+		for room, count in output[day].items():
+			reply += ROOM_ID_TO_NAME[room]+" - "+str(count)+"\n"
+
+
+	reply += "--------------------\n"
+	reply += "*Totals*\n"
+	for roomid in totals:
+		reply += ROOM_ID_TO_NAME[roomid]+" - "+str(totals[roomid])+"\n"
+
+
+	bot.sendMessage(chat_id=chat_id, text=reply, parse_mode="Markdown" )
+
+
+
 
 # Special function for testing purposes 
 @restricted
@@ -568,6 +794,9 @@ def special(bot, update):
 
 		bot.sendMessage(chat_id=61697695, text=text )
 
+
+
+		# bot.sendMessage(chat_id=61697695, text="Posting... sometimes this can cause the telegram api to 'time out' ? so won't complete posting but trying anyway.." )
 
 		# profile_pics = bot.getUserProfilePhotos(user_id=user_id)
 		# for photo in profile_pics['photos'][0]:
@@ -593,8 +822,15 @@ def new_chat_member(bot, update):
 	chat_id = update.message.chat.id
 	name = get_name(update)
 
-	if (chat_id == WP_ROOM) or (chat_id == SP_ROOM):
+	if (chat_id == WP_ROOM) or (chat_id == SP_ROOM) or (chat_id == WP_WOMENS):
 		# Check user has a profile pic.. 
+
+		timestamp = datetime.datetime.utcnow()
+
+		info = { 'user_id': user_id, 'chat_id': chat_id, 'timestamp': timestamp }
+		db.room_joins.insert(info)
+
+
 		profile_pics = bot.getUserProfilePhotos(user_id=user_id)
 		if profile_pics.total_count == 0:
 			pprint("USER NEEDS A PROFILE PIC")
@@ -620,11 +856,27 @@ def new_chat_member(bot, update):
 		
 			logger.info("welcoming - "+name)
 			msg = random.choice(MESSAGES['welcome']) % (name)
+
+			if (chat_id == WP_WOMENS):
+				msg = (MESSAGES['welcomewomen'] % (name))
+
 			if profile_pics.total_count == 0:
 				msg += " - Also, please set a profile pic!!"
 			message = bot.sendMessage(chat_id=chat_id,reply_to_message_id=message_id,text=msg)     
 
 			PRIOR_WELCOME_MESSAGE_ID[chat_id] = int(message.message_id)
+
+
+	if (chat_id == MH_ROOM) :
+		bot.restrict_chat_member(MH_ROOM, user_id, until_date=(datetime.datetime.now() + relativedelta(years=2)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
+
+	if (chat_id == WP_WOMENS):
+		bot.restrict_chat_member(WP_WOMENS, user_id, until_date=(datetime.datetime.now() + relativedelta(years=2)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
+
+	if chat_id == WP_ROOM:
+		bot.restrict_chat_member(WP_ROOM, user_id, until_date=(datetime.datetime.now() + relativedelta(days=14)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
+
+
 
 
 
@@ -653,7 +905,7 @@ def log_message_private(bot, update):
 
 	logger.info("Private Log Message: "+name+" said: "+update.message.text)
 
-	msg = bot.forwardMessage(chat_id=FORWARD_PRIVATE_MESSAGES_TO, from_chat_id=chat_id, message_id=message_id)
+	# msg = bot.forwardMessage(chat_id=FORWARD_PRIVATE_MESSAGES_TO, from_chat_id=chat_id, message_id=message_id)
 
 	msg = bot.sendMessage(chat_id=chat_id, text=(MESSAGES['start'] % name),parse_mode="Markdown",disable_web_page_preview=1)
 
@@ -803,6 +1055,39 @@ def links_and_hashtag_messages(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
+	name = get_name(update)
+
+
+	find_shill = re.findall(SHILL_DETECTOR, update.message.text)
+	if (len(find_shill) > 0) and chat_id in ROOM_ID_TO_NAME:
+
+		reply = 'Whalepool does not allow users to post personal affiliate links. This prevents many problems that can poison a community. Whalepool pays for all staff, servers, competitions and costs through affiliaite revenue, thus we ask users to support whalepool by using the community affiliate links instead.  ' 
+
+		for s in COUNTER_SHILL: 
+
+			found = re.findall(s['regex'], update.message.text) 
+			if len(found) > 0: 
+				reply += "\nThe user "+name+" recommended "+s['title']+", to signup on "+s['title']+" please use the following link: "+s['link']+""
+
+
+		# Send message to mod chat that soemeone has shilled
+		bot.sendMessage(chat_id=WP_ADMIN, text=name+" from "+ROOM_ID_TO_NAME[chat_id]+" posted a shill link",parse_mode="Markdown",disable_web_page_preview=1)
+
+		# Forward the offending message to the mod room
+		bot.forwardMessage(chat_id=WP_ADMIN, from_chat_id=chat_id, message_id=message_id)
+
+		# Delete the offending message
+		bot.delete_message(chat_id=chat_id, message_id=message_id)
+
+		# Replace with the new replacement message
+		bot.sendMessage(chat_id=chat_id, text=reply,parse_mode="Markdown",disable_web_page_preview=1)
+
+		# Ban the bad actor
+		bot.kick_chat_member(chat_id=chat_id, user_id=user_id)
+			
+
+
+
 
 	urls = [] 
 	legit_hashtag = False
@@ -820,9 +1105,11 @@ def links_and_hashtag_messages(bot, update):
 	if legit_hashtag != False:
 		forward = legit_hashtag
 
-	furlcnt = re.findall(forward_urls, update.message.text)
-	if len(furlcnt) > 0 and (chat_id == WP_ROOM):
+	furlcnt = re.findall(FORWARD_URLS, update.message.text)
+	if len(furlcnt) > 0 and ((chat_id == WP_ROOM) or (chat_id == MH_ROOM)):
 		forward = WP_FEED
+	if len(furlcnt) > 0 and (chat_id == SP_ROOM):
+		forward = SP_FEED
 
 	if forward != False:
 		bot.forwardMessage(chat_id=forward, from_chat_id=chat_id, message_id=message_id)
@@ -847,15 +1134,21 @@ dp.add_handler(CommandHandler('admins', admins))
 dp.add_handler(CommandHandler('teamspeak', teamspeak))
 dp.add_handler(CommandHandler('telegram', telegram))
 dp.add_handler(CommandHandler('livestream', livestream))
-dp.add_handler(CommandHandler('fomobot', fomobot))
+# dp.add_handler(CommandHandler('fomobot', fomobot))
+dp.add_handler(CommandHandler('teamspeakbadges', teamspeakbadges))
 dp.add_handler(CommandHandler('exchanges', exchanges))
 dp.add_handler(CommandHandler('donation', donation))
 dp.add_handler(CommandHandler('special', special))
 
+dp.add_handler(CommandHandler('topstickers', topstickers))
 dp.add_handler(CommandHandler('topgif', topgif))
 dp.add_handler(CommandHandler('topgifposters', topgifposters))
 dp.add_handler(CommandHandler('todayinwords', todayinwords))
 dp.add_handler(CommandHandler('todaysusers', todaysusers))
+dp.add_handler(CommandHandler('promotets', promotets))
+dp.add_handler(CommandHandler('shill', shill))
+dp.add_handler(CommandHandler('commandstats',commandstats))
+dp.add_handler(CommandHandler('joinstats',joinstats))
 
 # Welcome
 dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_chat_member))
