@@ -1,6 +1,6 @@
 # Natalia Whalepool Telegram bot 
 
-A simple telegram bot to help with the moderation of the telegram channels
+A simple telegram bot to help with the moderation of the telegram channels utilizing [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot)
 
 ### Features  
 - Start / Welcome console with a selection of prebuild simple messages/pages  
@@ -23,7 +23,7 @@ A simple telegram bot to help with the moderation of the telegram channels
 - Scan links that users post for affiliate links, remove their post, replace with a message with your own appropriate affiliate link, ban the user  
 - Forward urls posted to rooms from specific websites matching regex to your feed channels  
   
-  
+
 ### Requirements
 1) Mongodb  
 2) Install pip requirements `sudo pip3.6 install -r requirements.pip`    
