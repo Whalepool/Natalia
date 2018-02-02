@@ -3,8 +3,9 @@
 A simple telegram bot to help with the moderation of the whalepool telegram channels
 
 ## To run
-`cp config.sample.yaml config.yaml`
-Edit the config.yaml file
+`sudo pip3.6 install -r requirements.pip`  
+`cp config.sample.yaml config.yaml`  
+Edit the config.yaml file accordingly
 
 `python3.6 natalia.py`
 
