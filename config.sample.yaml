@@ -25,23 +25,20 @@ WORDCLOUD_STOPWORDS:
 
 # Forward URLS
 # URLS matching this regex will look to be forwarded to your 'feed' room
-FORWARD_URLS: >
-  bloomberg.com|
-  tradingview.com|
-  coindesk.com
+FORWARD_URLS: 'bloomberg.com|tradingview.com|coindesk.com'
 
 
 # Shill Detected
 # URLS of shill links to look out for to issue a warning message
-SHILL_DETECTOR: >
-  bitmex\.com\/register\/([a-zA-Z0-9]*)|
-  cryptofacilities\.com\/derivatives\/([a-zA-Z0-9-_]*)|
-  bitfinex\.com\/\?refcode=([a-zA-Z0-9]*)|
-  simplefx\.com\/\?sfx-r=([a-zA-Z0-9-_]*)|
-  1broker\.com\/\?c=en\/action\/r&i=([a-zA-Z0-9]*)|
-  nitrogensports\.eu\/r\/([a-zA-Z0-9]*)|
-  binance\.com\/\?ref=([a-zA-Z0-9]*)|
-  deribit\.com\/reg-([a-zA-Z0-9\.]*)
+SHILL_DETECTOR: 'bitmex\.com\/register\/([a-zA-Z0-9]*)|cryptofacilities\.com\/derivatives\/([a-zA-Z0-9-_]*)|bitfinex\.com\/\?refcode=([a-zA-Z0-9]*)|simplefx\.com\/\?sfx-r=([a-zA-Z0-9-_]*)|1broker\.com\/\?c=en\/action\/r&i=([a-zA-Z0-9]*)|nitrogensports\.eu\/r\/([a-zA-Z0-9]*)|binance\.com\/\?ref=([a-zA-Z0-9]*)|deribit\.com\/reg-([a-zA-Z0-9\.]*)'
+# bitmex\.com\/register\/([a-zA-Z0-9]*)|
+# cryptofacilities\.com\/derivatives\/([a-zA-Z0-9-_]*)|
+# bitfinex\.com\/\?refcode=([a-zA-Z0-9]*)|
+# simplefx\.com\/\?sfx-r=([a-zA-Z0-9-_]*)|
+# 1broker\.com\/\?c=en\/action\/r&i=([a-zA-Z0-9]*)|
+# nitrogensports\.eu\/r\/([a-zA-Z0-9]*)|
+# binance\.com\/\?ref=([a-zA-Z0-9]*)|
+# deribit\.com\/reg-([a-zA-Z0-9\.]*)
 
 
 # List of matching shill links and their counter shill links to replace the offending messages with
