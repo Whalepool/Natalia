@@ -836,6 +836,8 @@ def new_chat_member(bot, update):
 			pprint("USER NEEDS A PROFILE PIC")
 
 
+		restricted = 0
+
 		# Bot was added to a group chat
 		if update.message._new_chat_member.username == BOTNAME:
 			return False
@@ -852,6 +854,13 @@ def new_chat_member(bot, update):
 					bot.delete_message(chat_id=chat_id, message_id=PRIOR_WELCOME_MESSAGE_ID[chat_id])
 			except:
 				pass
+
+
+			#if len(name) > 50: 
+			#	if chat_id in ROOM_ID_TO_NAME:
+			#		bot.restrict_chat_member(chat_id, user_id, until_date=(datetime.datetime.now() + relativedelta(years=2)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
+
+
 
 		
 			logger.info("welcoming - "+name)
@@ -873,7 +882,7 @@ def new_chat_member(bot, update):
 	if (chat_id == WP_WOMENS):
 		bot.restrict_chat_member(WP_WOMENS, user_id, until_date=(datetime.datetime.now() + relativedelta(years=2)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
 
-	if chat_id == WP_ROOM:
+	if chat_id == WP_ROOM :
 		bot.restrict_chat_member(WP_ROOM, user_id, until_date=(datetime.datetime.now() + relativedelta(days=14)), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
 
 
