@@ -493,6 +493,7 @@ def topgif(bot,update):
 @restricted
 def topgifposters(bot, update):
 
+
 	chat_id = update.message.chat.id
 
 	pipe = [ { "$group": { "_id": "$user_id", "total": { "$sum": 1 }  } }, { "$sort": { "total": -1 } }, { "$limit": 5 }   ]
@@ -500,8 +501,13 @@ def topgifposters(bot, update):
 
 	msg = "I'm naming and shaming the top 5 gif posters in "+ROOM_ID_TO_NAME[WP_ROOM]
 	for i,u in enumerate(users):
-		user = bot.getChat(u['_id'])
-		msg += "\n#"+str(i+1)+" - "+user['first_name']+" with "+str(u['total'])+" gifs"
+
+
+		user = list(db.users.find({ 'user_id': u['_id'] }))
+		if len(user) > 0:
+			user = user[0]
+			msg += "\n#"+str(i+1)+" - "+user['name']+" with "+str(u['total'])+" gifs"
+
 
 
 	msg = bot.sendMessage(chat_id=WP_ROOM, text=msg )
