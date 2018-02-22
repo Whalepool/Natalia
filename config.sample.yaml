@@ -128,6 +128,7 @@ MESSAGES:
    /shill - spam / promote various exchanges.
    /commandstats - get the command stats since the start of the month
    /joinstats - get the join stats since the start of the month
+   /whalepooloverprice - list the user gifs, user messages and user joins per hour over price  
 
   # About page
   about: > 

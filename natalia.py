@@ -24,6 +24,20 @@ import yaml
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 from PIL import Image
 
+# For plotting messages / price charts
+import pandas as pd 
+
+import requests
+
+import matplotlib 
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle, Patch
+from matplotlib.finance import candlestick_ohlc
+
+import talib as ta
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -477,6 +491,8 @@ def topstickers(bot,update):
 	bot.sendMessage(chat_id=update.message.chat_id, text="message has been posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
 
 
+
+
 @restricted
 def topgif(bot,update):
 
@@ -777,12 +793,262 @@ def joinstats(bot,update):
 	bot.sendMessage(chat_id=chat_id, text=reply, parse_mode="Markdown" )
 
 
+def fooCandlestick(ax, quotes, width=0.029, colorup='#FFA500', colordown='#222', alpha=1.0):
+	OFFSET = width/2.0
+	lines = []
+	boxes = []
+
+	for q in quotes:
+
+		timestamp, op, hi, lo, close = q[:5]
+		box_h = max(op, close)
+		box_l = min(op, close)
+		height = box_h - box_l
+
+		if close>=op:
+			color = '#3fd624'
+		else:
+			color = '#e83e2c'
+
+		vline_lo = Line2D( xdata=(timestamp, timestamp), ydata=(lo, box_l), color = 'k', linewidth=0.5, antialiased=True, zorder=10 )
+		vline_hi = Line2D( xdata=(timestamp, timestamp), ydata=(box_h, hi), color = 'k', linewidth=0.5, antialiased=True, zorder=10 )
+		rect = Rectangle( xy = (timestamp-OFFSET, box_l), width = width, height = height, facecolor = color, edgecolor = color, zorder=10)
+		rect.set_alpha(alpha)
+		lines.append(vline_lo)
+		lines.append(vline_hi)
+		boxes.append(rect)
+		ax.add_line(vline_lo)
+		ax.add_line(vline_hi)
+		ax.add_patch(rect)
+
+	ax.autoscale_view()
+
+	return lines, boxes
+
+# Special function for testing purposes 
+@restricted
+def whalepooloverprice(bot, update):
+	user_id = update.message.from_user.id 
+	chat_id = update.message.chat_id
+
+
+	bot.sendMessage(chat_id=61697695, text="Processing data" )
+
+	
+	# Room only
+	mongo_match = { "$match": { 'chat_id': WP_ROOM } }
+
+
+	do = 'hourly'
+
+	if do == 'daily': 
+		bar_width = 0.864
+		api_timeframe = '1D'
+		date_group_format = "%Y-%m-%d"
+
+	if do == 'hourly': 
+		bar_width         = 0.029
+		api_timeframe     = '1h'
+		date_group_format = "%Y-%m-%dT%H"
+
+
+
+	# Get the candles
+	url = 'https://api.bitfinex.com/v2/candles/trade:'+api_timeframe+':tBTCUSD/hist?limit=200'
+	request = json.loads(requests.get(url).text)
+
+	candles = pd.read_json(json.dumps(request))
+	candles.rename(columns={0:'date', 1:'open', 2:'close', 3:'high', 4:'low', 5:'volume'}, inplace=True)
+	candles['date'] = pd.to_datetime( candles['date'], unit='ms' )
+	candles.set_index(candles['date'], inplace=True)
+	candles.sort_index(inplace=True)
+
+	first_candlestick_date = candles.index[0].to_pydatetime()
+
+	del candles['date']
+	candles = candles.reset_index()[['date','open','high','low','close','volume']]
+	candles['date'] = candles['date'].map(mdates.date2num)
+
+
+	# Users joins
+	pipe =  [
+	  mongo_match,
+	  { "$group": {
+			"_id":    { "$dateToString": { "format": date_group_format, "date": "$timestamp" } },
+			"count":  { "$sum": 1 }
+		}	
+	  },
+	]
+	rows = list(db.room_joins.aggregate(pipe))
+
+	userjoins = pd.DataFrame(rows)
+	userjoins['date'] = pd.to_datetime( userjoins['_id'], format=date_group_format)
+	# msgs['date'] = pd.to_datetime( msgs['_id'], format='%Y-%m-%d')
+	del userjoins['_id']
+	userjoins.set_index(userjoins['date'], inplace=True)
+	userjoins.sort_index(inplace=True)
+
+	userjoins['date'] = userjoins['date'].map(mdates.date2num)
+	userjoins = userjoins.loc[first_candlestick_date:]
+
+
+
+	# Get the messages
+	pipe =  [
+	  mongo_match,
+	  { "$group": {
+			"_id":    { "$dateToString": { "format": date_group_format, "date": "$timestamp" } },
+			"count":  { "$sum": 1 }
+		}	
+	  },
+	]
+	rows = list(db.natalia_textmessages.aggregate(pipe))
+
+	msgs = pd.DataFrame(rows)
+	msgs['date'] = pd.to_datetime( msgs['_id'], format=date_group_format)
+	# msgs['date'] = pd.to_datetime( msgs['_id'], format='%Y-%m-%d')
+	del msgs['_id']
+	msgs.set_index(msgs['date'], inplace=True)
+	msgs.sort_index(inplace=True)
+
+	msgs['date'] = msgs['date'].map(mdates.date2num)
+	msgs = msgs.loc[first_candlestick_date:]
+
+
+	# Stickers
+	pipe =  [
+	  mongo_match,
+	  { "$group": {
+			"_id":    { "$dateToString": { "format": date_group_format, "date": "$timestamp" } },
+			"count":  { "$sum": 1 }
+		}	
+	  },
+	]
+	rows = list(db.natalia_stickers.aggregate(pipe))
+
+	gifs = pd.DataFrame(rows)
+	gifs['date'] = pd.to_datetime( gifs['_id'], format='%Y-%m-%dT%H')
+	# msgs['date'] = pd.to_datetime( msgs['_id'], format='%Y-%m-%d')
+	del gifs['_id']
+	gifs.set_index(gifs['date'], inplace=True)
+	gifs.sort_index(inplace=True)
+	gifs['date'] = gifs['date'].map(mdates.date2num)
+	gifs = gifs.loc[first_candlestick_date:]
+
+
+
+
+	# Enable a Grid
+	plt.rc('axes', grid=True)
+	# Set Grid preferences 
+	plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
+
+	# Create a figure, 16 inches by 12 inches
+	fig = plt.figure(facecolor='white', figsize=(22, 12), dpi=100)
+
+	# Draw 3 rectangles
+	# left, bottom, width, height
+	left, width = 0.1, 1
+	rect1 = [left, 0.7, width, 0.5]
+	rect2 = [left, 0.5, width, 0.2]
+	rect3 = [left, 0.3, width, 0.2]
+	rect4 = [left, 0.1, width, 0.2]
+
+	ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
+	ax2 = fig.add_axes(rect2, facecolor='#f6f6f6', sharex=ax1)
+	ax3 = fig.add_axes(rect3, facecolor='#f6f6f6', sharex=ax1)
+	ax4 = fig.add_axes(rect4, facecolor='#f6f6f6', sharex=ax1)
+
+
+	ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
+	ax1.set_xlabel('date')
+
+	ax1.set_title('Whalepool Messages, Gif & User joins per hour over price', fontsize=20, fontweight='bold')
+	ax1.xaxis_date()
+
+	fooCandlestick(ax1, candles.values, width=bar_width, colorup='g', colordown='k',alpha=0.9)
+	# fooCandlestick(ax2, candles.values, width=0.864, colorup='g', colordown='k',alpha=0.9)
+	ax1.set_ylabel('Bitcoin Price', color='g', size='large')
+	fig.autofmt_xdate()
+
+
+	# STICKERS
+	gifs['count'] = gifs['count'].astype(float)
+	gifvals = gifs['count'].values
+	vmax = gifvals.max()
+	upper, middle, lower = ta.BBANDS(gifvals, timeperiod=20, nbdevup=2.05, nbdevdn=2, matype=0)
+	gifs['upper'] = upper
+	mask = gifs['count'] > gifs['upper']
+
+	ax2.set_ylabel('Gifs', color='g', size='large')
+	ax2.bar(gifs['date'].values, gifvals,color='#7f7f7f',width=bar_width,align='center')
+	ax2.plot( gifs['date'].values, upper, color='#FFA500', alpha=0.3 )
+	ax2.bar(gifs[mask]['date'].values, gifs[mask]['count'].values,color='#e53ce8',width=bar_width,align='center')
+
+	# MESSAGES
+	msgs['count'] = msgs['count'].astype(float)
+	messages = msgs['count'].values
+	vmax = messages.max()
+	upper, middle, lower = ta.BBANDS(messages, timeperiod=20, nbdevup=2.05, nbdevdn=2, matype=0)
+	msgs['upper'] = upper
+	mask = msgs['count'] > msgs['upper']
+
+	ax3.set_ylabel('Messages', color='g', size='large')
+	ax3.bar(msgs['date'].values, messages,color='#7f7f7f',width=bar_width,align='center')
+	ax3.plot( msgs['date'].values, upper, color='#FFA500', alpha=0.3 )
+	ax3.bar(msgs[mask]['date'].values, msgs[mask]['count'].values,color='#4286f4',width=bar_width,align='center')
+
+
+	# User joins
+	userjoins['count'] = userjoins['count'].astype(float)
+	macd, macdsignal, macdhist = ta.MACD(userjoins['count'].values, fastperiod=12, slowperiod=26, signalperiod=9)
+	np.nan_to_num(macdhist)
+
+	growing_macd_hist = macdhist.copy()
+	growing_macd_hist[ growing_macd_hist < 0 ] = 0
+
+
+
+	ax4.set_ylabel('User Joins Momentum', color='g', size='large')
+	ax4.plot(userjoins['date'].values, macd, color='#4449EC', lw=2)
+	ax4.plot(userjoins['date'].values, macdsignal, color='#F69A4E', lw=2)
+	ax4.bar(userjoins['date'].values, macdhist,color='#FB5256',width=bar_width,align='center')
+	ax4.bar(userjoins['date'].values, growing_macd_hist,color='#4BF04F',width=bar_width,align='center')
+
+
+
+
+
+	#im = Image.open(LOGO_PATH)	
+	#fig.figimage(   im,   105,  (fig.bbox.ymax - im.size[1])-29)
+	PATH_MSGS_OVER_PRICE = PATH+"messages_over_price.png"
+
+	plt.savefig(PATH_MSGS_OVER_PRICE, bbox_inches='tight')
+
+
+	msg = bot.sendPhoto(chat_id=WP_ROOM, photo=open(PATH_MSGS_OVER_PRICE,'rb'), caption="Whalepool Messages, Gif & User joins per hour over price" )
+	bot.sendMessage(chat_id=chat_id, text="'Whalepool Messages, Gif & User joins per hour over price' posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
+
+	os.remove(PATH_MSGS_OVER_PRICE)
+
+
+	# bot.sendMessage(chat_id=61697695, text="Posting... sometimes this can cause the telegram api to 'time out' ? so won't complete posting but trying anyway.." )
+
+	# profile_pics = bot.getUserProfilePhotos(user_id=user_id)
+	# for photo in profile_pics['photos'][0]:
+	# 	if photo['height'] == 160:
+	# 		bot.sendPhoto(chat_id=61697695, photo=photo['file_id'])
+	# 		new_file = bot.getFile(photo['file_id'])
+	# 		new_file.download('telegram.jpg')
+	# 		pprint(photo.__dict__)
+
 
 
 # Special function for testing purposes 
 @restricted
 def special(bot, update):
 	user_id = update.message.from_user.id 
+	chat_id = update.message.chat_id
 	if user_id == 61697695:
 
 		# Test Emoji
@@ -799,21 +1065,6 @@ def special(bot, update):
 		text += '🖤'
 
 		bot.sendMessage(chat_id=61697695, text=text )
-
-
-
-		# bot.sendMessage(chat_id=61697695, text="Posting... sometimes this can cause the telegram api to 'time out' ? so won't complete posting but trying anyway.." )
-
-		# profile_pics = bot.getUserProfilePhotos(user_id=user_id)
-		# for photo in profile_pics['photos'][0]:
-		# 	if photo['height'] == 160:
-		# 		bot.sendPhoto(chat_id=61697695, photo=photo['file_id'])
-		# 		new_file = bot.getFile(photo['file_id'])
-		# 		new_file.download('telegram.jpg')
-		# 		pprint(photo.__dict__)
-
-
-
 
 
 #################################
@@ -1164,6 +1415,8 @@ dp.add_handler(CommandHandler('promotets', promotets))
 dp.add_handler(CommandHandler('shill', shill))
 dp.add_handler(CommandHandler('commandstats',commandstats))
 dp.add_handler(CommandHandler('joinstats',joinstats))
+dp.add_handler(CommandHandler('whalepooloverprice',whalepooloverprice))
+
 
 # Welcome
 dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_chat_member))
