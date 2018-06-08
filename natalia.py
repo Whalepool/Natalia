@@ -190,12 +190,12 @@ def restricted(func):
 #			UTILS	
 
 # Resolve message data to a readable name 	 		
-def get_name(update):
+def get_name(user):
         try:
-            name = update.message.from_user.first_name
+            name = user.first_name
         except (NameError, AttributeError):
             try:
-                name = update.message.from_user.username
+                name = user.username
             except (NameError, AttributeError):
                 logger.info("No username or first name.. wtf")
                 return	""
@@ -218,7 +218,7 @@ def start(bot, update):
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
 	user_id = update.message.from_user.id 
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/start - "+name)
 
 	pprint(update.message.chat.type)
@@ -245,7 +245,7 @@ def about(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/about - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -267,7 +267,7 @@ def rules(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/rules - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -288,7 +288,7 @@ def admins(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/admins - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -317,7 +317,7 @@ def teamspeak(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/teamspeak - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -339,7 +339,7 @@ def teamspeakbadges(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/teamspeakbadges - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -360,7 +360,7 @@ def telegram(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/telegram - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -381,7 +381,7 @@ def livestream(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/livestream - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -403,7 +403,7 @@ def fomobot(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/fomobot - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -424,7 +424,7 @@ def exchanges(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/exchanges - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -446,7 +446,7 @@ def donation(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat.id
 	message_id = update.message.message_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	logger.info("/donation - "+name)
 
 	if (update.message.chat.type == 'group') or (update.message.chat.type == 'supergroup'):
@@ -628,7 +628,7 @@ def promotets(bot, update):
 	pprint('promotets...')
 
 	chat_id = update.message.chat_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 	fmsg = re.findall( r"\"(.*?)\"", update.message.text)
 
 	if len(fmsg) > 0:
@@ -659,7 +659,7 @@ def promotets(bot, update):
 def shill(bot, update):
 
 	chat_id = update.message.chat_id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 	bot.sendMessage(chat_id=WP_ADMIN, parse_mode="Markdown", text=name+" just shilled")
 
@@ -1077,7 +1077,7 @@ def new_chat_member(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
-	name = get_name(update)
+	name = get_name(update.message._new_chat_member)
 
 	if (chat_id == WP_ROOM) or (chat_id == SP_ROOM) or (chat_id == WP_WOMENS):
 		# Check user has a profile pic.. 
@@ -1151,9 +1151,9 @@ def left_chat_member(bot, update):
 	# Disabled # Spammy # Not needed # Zero Value add 
 	return False 
 
-	# name = get_name(update)
+	# name = get_name(update.message.from_user)
 	# logger.info(message.left_chat_member.first_name+' left chat '+message.chat.title)
-	# name = get_name(update)
+	# name = get_name(update.message.from_user)
 	# msg = random.choice(MESSAGES['goodbye']) % (name)
 	# bot.sendMessage(chat_id=update.message.chat.id,text=msg,parse_mode="Markdown",disable_web_page_preview=1) 
 
@@ -1167,7 +1167,7 @@ def log_message_private(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 	logger.info("Private Log Message: "+name+" said: "+update.message.text)
 
@@ -1187,7 +1187,7 @@ def echo(bot, update):
 		message = username+': '+update.message.text
 		pprint(str(chat_id)+" - "+str(message))
 	
-		name = get_name(update)
+		name = get_name(update.message.from_user)
 		timestamp = datetime.datetime.utcnow()
 
 		info = { 'user_id': user_id, 'chat_id': chat_id, 'message_id':message_id, 'message': message, 'timestamp': timestamp }
@@ -1243,7 +1243,7 @@ def sticker_message(bot, update):
 	chat_id = update.message.chat.id 
 	timestamp = datetime.datetime.utcnow()
 	username = update.message.from_user.username 
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 	# if chat_id in LOG_ROOMS: 
 	if chat_id: 
@@ -1271,7 +1271,7 @@ def video_message(bot, update):
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
 	timestamp = datetime.datetime.utcnow()
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 	pprint('VIDEO')
 
@@ -1284,7 +1284,7 @@ def document_message(bot, update):
 	chat_id = update.message.chat.id
 	timestamp = datetime.datetime.utcnow()
 	username = update.message.from_user.username 
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 
 
@@ -1321,7 +1321,7 @@ def links_and_hashtag_messages(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
-	name = get_name(update)
+	name = get_name(update.message.from_user)
 
 
 	find_shill = re.findall(SHILL_DETECTOR, update.message.text)
