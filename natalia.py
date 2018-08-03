@@ -1077,7 +1077,7 @@ def new_chat_member(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
-	name = get_name(update.message._new_chat_member)
+	name = get_name(update.message._new_chat_members)
 
 	if (chat_id == WP_ROOM) or (chat_id == SP_ROOM) or (chat_id == WP_WOMENS):
 		# Check user has a profile pic.. 
@@ -1096,7 +1096,7 @@ def new_chat_member(bot, update):
 		restricted = 0
 
 		# Bot was added to a group chat
-		if update.message._new_chat_member.username == BOTNAME:
+		if update.message._new_chat_members.username == BOTNAME:
 			return False
 		# Another user joined the chat
 		else:
