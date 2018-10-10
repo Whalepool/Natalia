@@ -22,7 +22,10 @@ import os
 import sys
 import yaml
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+
 from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
 
 # For plotting messages / price charts
 import pandas as pd 
@@ -115,6 +118,7 @@ WP_ROOM     = -1001012147388      # Whalepool
 SP_ROOM     = -1001120581521      # Shitpool
 WP_ADMIN    = -238862165          # Whalepool Admin
 MH_ROOM     = -1001213548615      # Master Holder room
+GP_ROOM     = -1001142735123 	 # Guppy Pool
 TEST_ROOM   = -1001223115449     # Test room
 WP_WOMENS   = -1001248205448      # Whalepool Womens
 WP_FEED     = "@whalepoolbtcfeed" # Whalepool Feed
@@ -125,6 +129,7 @@ ROOM_ID_TO_NAME = {
 	SP_ROOM : 'Shitpool',
 	WP_ADMIN: 'Whalepool Mod room',
 	MH_ROOM : 'Whalepool Trading Dojo',
+	GP_ROOM : 'Guppy Pool',
 	TEST_ROOM: 'Test room',
 	WP_WOMENS : 'Whalepool Womens',
 	WP_FEED : 'Whalepool Feed channel',
@@ -132,7 +137,7 @@ ROOM_ID_TO_NAME = {
 }
 
 # Rooms where chat/gifs/etc is logged for stats etc 
-LOG_ROOMS = [ WP_ROOM, SP_ROOM, TEST_ROOM ]
+LOG_ROOMS = [ WP_ROOM, SP_ROOM, GP_ROOM, TEST_ROOM ]
 
 
 # Storing last 'welcome' message ids 
@@ -634,7 +639,7 @@ def promotets(bot, update):
 	if len(fmsg) > 0:
 
 		# rooms = [WP_ROOM]
-		rooms = [WP_ROOM, SP_ROOM, MH_ROOM, WP_FEED, SP_FEED]
+		rooms = [WP_ROOM, SP_ROOM, MH_ROOM, GP_ROOM, WP_FEED, SP_FEED]
 
 		for r in rooms:
 
@@ -663,7 +668,7 @@ def shill(bot, update):
 
 	bot.sendMessage(chat_id=WP_ADMIN, parse_mode="Markdown", text=name+" just shilled")
 
-	rooms = [WP_ROOM, SP_ROOM, WP_FEED, SP_FEED]
+	rooms = [WP_ROOM, SP_ROOM, WP_FEED, GP_ROOM, SP_FEED]
 
 	for r in rooms:
 		bot.sendMessage(chat_id=r, parse_mode="Markdown", text=MESSAGES['shill'],disable_web_page_preview=1)
@@ -793,6 +798,7 @@ def joinstats(bot,update):
 	bot.sendMessage(chat_id=chat_id, text=reply, parse_mode="Markdown" )
 
 
+
 def fooCandlestick(ax, quotes, width=0.029, colorup='#FFA500', colordown='#222', alpha=1.0):
 	OFFSET = width/2.0
 	lines = []
@@ -800,7 +806,7 @@ def fooCandlestick(ax, quotes, width=0.029, colorup='#FFA500', colordown='#222',
 
 	for q in quotes:
 
-		timestamp, op, hi, lo, close = q[:5]
+		date, timestamp, op, hi, lo, close, volume = q[:7]
 		box_h = max(op, close)
 		box_l = min(op, close)
 		height = box_h - box_l
@@ -830,16 +836,46 @@ def fooCandlestick(ax, quotes, width=0.029, colorup='#FFA500', colordown='#222',
 def whalepooloverprice(bot, update):
 	user_id = update.message.from_user.id 
 	chat_id = update.message.chat_id
+	name = get_name(update)
+	do_user = None 
+
+	args = update.message.text.split()
+	argslen = len(args)
+	if argslen > 1:
+		username = args[1] 
+
+		res = list(db.users.find({ 'username': username }))
+		if len(res) > 0 and username != '':
+			do_user          = True 
+			do_user_user_id  = res[0]['user_id'] 
+			do_user_username = res[0]['username']
+
+		else:
+			update.message.reply_text("Invalid username. No records found.")
+			return False
 
 
-	bot.sendMessage(chat_id=61697695, text="Processing data" )
 
+	bot.sendMessage(chat_id=61697695, text=name+" Processing data" )
 	
-	# Room only
-	mongo_match = { "$match": { 'chat_id': WP_ROOM } }
+
+	# Specific user only
+	if do_user is not None: 
+		CHART_TITLE = do_user_username+" messages & gifs per hour over price + whalepool user joins per hour macd momentum"
+		mongo_match = { "$match": { 'user_id': do_user_user_id } }
+
+		profile_pic = bot.get_user_profile_photos(do_user_user_id)
+		profile_pic = bot.getFile(profile_pic.photos[0][0].file_id)
+		profile_pic.download('profile_pic.jpg')
+
+
+	else:
+		CHART_TITLE = "Messages, Gif & User joins per hour over price"
+		mongo_match = { "$match": { 'chat_id': WP_ROOM } }
 
 
 	do = 'hourly'
+
 
 	if do == 'daily': 
 		bar_width = 0.864
@@ -865,14 +901,18 @@ def whalepooloverprice(bot, update):
 
 	first_candlestick_date = candles.index[0].to_pydatetime()
 
-	del candles['date']
-	candles = candles.reset_index()[['date','open','high','low','close','volume']]
-	candles['date'] = candles['date'].map(mdates.date2num)
+	candles['date2num'] = candles['date'].map(mdates.date2num)
+	candles = candles[[ 'date', 'date2num', 'open', 'high', 'low', 'close', 'volume']]
+	#del candles['date']
+	#candles = candles.reset_index()[['date','open','high','low','close','volume']]
+	#candles['date'] = candles['date'].map(mdates.date2num)
+
+
 
 
 	# Users joins
 	pipe =  [
-	  mongo_match,
+	  { "$match": { 'chat_id': WP_ROOM } },
 	  { "$group": {
 			"_id":    { "$dateToString": { "format": date_group_format, "date": "$timestamp" } },
 			"count":  { "$sum": 1 }
@@ -913,7 +953,7 @@ def whalepooloverprice(bot, update):
 
 	msgs['date'] = msgs['date'].map(mdates.date2num)
 	msgs = msgs.loc[first_candlestick_date:]
-
+	msgs = msgs.join( candles['close'] )
 
 	# Stickers
 	pipe =  [
@@ -946,30 +986,104 @@ def whalepooloverprice(bot, update):
 	# Create a figure, 16 inches by 12 inches
 	fig = plt.figure(facecolor='white', figsize=(22, 12), dpi=100)
 
+
+	 # Add the logo
+	im = Image.open('media/wp_logo.jpg')	
+	fig.figimage(   im,   100,  (fig.bbox.ymax - im.size[1])+185, alpha=1, zorder=1)
+
+	size = fig.get_size_inches()*fig.dpi
+	figure_width = size[0]
+	figure_height = size[1]
+
+
+	# Add the users profile pic
+	if do_user is not None: 
+		im = Image.open('profile_pic.jpg')	
+		pp = plt.imread('profile_pic.jpg')
+		pp_width = im.size[0]
+		pp_height = im.size[1]
+		fig.figimage( pp, (fig.bbox.xmax/2 - im.size[0]/2)+100,  (fig.bbox.ymax - im.size[1])+130, alpha=1, zorder=1)
+
+
+
+
 	# Draw 3 rectangles
 	# left, bottom, width, height
-	left, width = 0.1, 1
-	rect1 = [left, 0.7, width, 0.5]
-	rect2 = [left, 0.5, width, 0.2]
-	rect3 = [left, 0.3, width, 0.2]
-	rect4 = [left, 0.1, width, 0.2]
 
-	ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
-	ax2 = fig.add_axes(rect2, facecolor='#f6f6f6', sharex=ax1)
-	ax3 = fig.add_axes(rect3, facecolor='#f6f6f6', sharex=ax1)
-	ax4 = fig.add_axes(rect4, facecolor='#f6f6f6', sharex=ax1)
+	# Specific user only
+	if do_user is not None: 
+		
+		left, width = 0.1, 1
+		rect1 = [left, 0.5, width, 0.7]
+		rect2 = [left, 0.3, width, 0.2]
+		rect3 = [left, 0.1, width, 0.2]
+
+		ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
+		ax2 = fig.add_axes(rect2, facecolor='#f6f6f6', sharex=ax1)
+		ax3 = fig.add_axes(rect3, facecolor='#f6f6f6', sharex=ax1)
+		
+	# all users
+	else: 
+
+		left, width = 0.1, 1
+		rect1 = [left, 0.7, width, 0.5]
+		rect2 = [left, 0.5, width, 0.2]
+		rect3 = [left, 0.3, width, 0.2]
+		rect4 = [left, 0.1, width, 0.2]
+
+		ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
+		ax2 = fig.add_axes(rect2, facecolor='#f6f6f6', sharex=ax1)
+		ax3 = fig.add_axes(rect3, facecolor='#f6f6f6', sharex=ax1)
+		ax4 = fig.add_axes(rect4, facecolor='#f6f6f6', sharex=ax1)
+
 
 
 	ax1 = fig.add_axes(rect1, facecolor='#f6f6f6')  
 	ax1.set_xlabel('date')
 
-	ax1.set_title('Whalepool Messages, Gif & User joins per hour over price', fontsize=20, fontweight='bold')
+	ax1.set_title(CHART_TITLE, fontsize=20, fontweight='bold')
 	ax1.xaxis_date()
 
-	fooCandlestick(ax1, candles.values, width=bar_width, colorup='g', colordown='k',alpha=0.9)
-	# fooCandlestick(ax2, candles.values, width=0.864, colorup='g', colordown='k',alpha=0.9)
+	fooCandlestick(ax1, candles.values, width=bar_width, colorup='g', colordown='k',alpha=1)
 	ax1.set_ylabel('Bitcoin Price', color='g', size='large')
 	fig.autofmt_xdate()
+
+
+
+
+	# MESSAGES
+	msgs['count'] = msgs['count'].astype(float)
+	msgs = pd.merge( msgs[['count','date']], candles[['open','close']], left_index=True, right_index=True)
+	messages = msgs['count'].values
+
+
+
+	ax2.set_ylabel('Messages', color='g', size='large')
+	# Specific users 
+	if do_user is not None: 
+
+		# Bullish /green 
+		mask = msgs['close'] > msgs['open']
+		# Paint red bars
+		ax2.bar(msgs['date'].values, messages,color='#e83e2c',width=bar_width,align='center')
+		# Paint green bars
+		ax2.bar(msgs[mask]['date'].values, msgs[mask]['count'].values,color='#3fd624',width=bar_width,align='center')
+
+
+	# All users
+	else:	
+
+		vmax = messages.max()
+		upper, middle, lower = ta.BBANDS(messages, timeperiod=20, nbdevup=2.05, nbdevdn=2, matype=0)
+		msgs['upper'] = upper
+		mask = msgs['count'] > msgs['upper']
+
+		ax2.set_ylabel('Messages', color='g', size='large')
+		ax2.bar(msgs['date'].values, messages,color='#7f7f7f',width=bar_width,align='center')
+		ax2.plot( msgs['date'].values, upper, color='#FFA500', alpha=0.3 )
+		ax2.bar(msgs[mask]['date'].values, msgs[mask]['count'].values,color='#4286f4',width=bar_width,align='center')
+
+
 
 
 	# STICKERS
@@ -980,40 +1094,99 @@ def whalepooloverprice(bot, update):
 	gifs['upper'] = upper
 	mask = gifs['count'] > gifs['upper']
 
-	ax2.set_ylabel('Gifs', color='g', size='large')
-	ax2.bar(gifs['date'].values, gifvals,color='#7f7f7f',width=bar_width,align='center')
-	ax2.plot( gifs['date'].values, upper, color='#FFA500', alpha=0.3 )
-	ax2.bar(gifs[mask]['date'].values, gifs[mask]['count'].values,color='#e53ce8',width=bar_width,align='center')
+	ax3.set_ylabel('Gifs', color='g', size='large')
+	ax3.bar(gifs['date'].values, gifvals,color='#7f7f7f',width=bar_width,align='center')
+	ax3.plot( gifs['date'].values, upper, color='#FFA500', alpha=0.3 )
+	ax3.bar(gifs[mask]['date'].values, gifs[mask]['count'].values,color='#e53ce8',width=bar_width,align='center')
 
-	# MESSAGES
-	msgs['count'] = msgs['count'].astype(float)
-	messages = msgs['count'].values
-	vmax = messages.max()
-	upper, middle, lower = ta.BBANDS(messages, timeperiod=20, nbdevup=2.05, nbdevdn=2, matype=0)
-	msgs['upper'] = upper
-	mask = msgs['count'] > msgs['upper']
 
-	ax3.set_ylabel('Messages', color='g', size='large')
-	ax3.bar(msgs['date'].values, messages,color='#7f7f7f',width=bar_width,align='center')
-	ax3.plot( msgs['date'].values, upper, color='#FFA500', alpha=0.3 )
-	ax3.bar(msgs[mask]['date'].values, msgs[mask]['count'].values,color='#4286f4',width=bar_width,align='center')
+
+
+
+
+
+
+
+	# MESSAGE VOLUME PROFILE 
+	# vprofile = pd.merge( msgs[['count']], candles[['close']], left_index=True, right_index=True)
+	vprofile = candles 
+
+	height_precision = 1 
+	vprofile[('high')] = vprofile[('high')] * height_precision
+	vprofile[('low')] = vprofile[('low')] * height_precision
+	vprofile = vprofile.round({'low': 0, 'high': 0})  
+
+	 
+	mp = {} 
+	tot_min_price=vprofile['low'].min()
+	tot_max_price=vprofile['high'].max()
+	for price in range(int(tot_min_price), int(tot_max_price)):
+		if price not in mp:
+			mp[price] = 0 
+		mp[price]+=1
+
+
+	for x in range(0, len(vprofile)):
+		min_price=vprofile['low'][x]
+		max_price=vprofile['high'][x]
+
+		for price in range(int(min_price), int(max_price)):
+			mp[price] += vprofile['volume'][x]
+
+
+
+	# volume = pd.Series(mp, name='volume')
+	# volume = volume.to_frame()
+
+	# vquantiles = volume['volume'].quantile([.2,.4,.6,.75,.8,.85,.9,.95])
+	# quantiles = {
+	# 	0.2 : 'cce0ff',
+	# 	0.4 : 'b3d1ff',
+	# 	0.6 : '99c2ff',
+	# 	0.75 : '66a3ff',
+	# 	0.8 : '4d94ff',
+	# 	0.85 : '3385ff',
+	# 	0.9 : '1a75ff',
+	# 	0.95 : '0066ff'
+	# }
+
+
+	# vmax = volume['volume'].max()
+	# ax1t = ax1.twiny()
+	# ax1t.barh(volume.index.values, volume['volume'].values,color='#e6f0ff',height=1,align='center',alpha=0.1,zorder=1)
+	# ax1t.set_xlim(0, 5*vmax)
+	# ax1t.set_xticks([])
+
+
+	# for index, q in enumerate(quantiles):
+	# 	mask = (volume['volume'] >= vquantiles.iloc[index] )
+	# 	ax1t.barh(volume[mask].index.values, volume[mask]['volume'].values,color='#'+quantiles[q],height=1,align='center',alpha=0.6,zorder=1)
+
+
+
+
+
+
+
 
 
 	# User joins
-	userjoins['count'] = userjoins['count'].astype(float)
-	macd, macdsignal, macdhist = ta.MACD(userjoins['count'].values, fastperiod=12, slowperiod=26, signalperiod=9)
-	np.nan_to_num(macdhist)
+	# For all room 
+	if do_user is None: 
+		userjoins['count'] = userjoins['count'].astype(float)
+		macd, macdsignal, macdhist = ta.MACD(userjoins['count'].values, fastperiod=12, slowperiod=26, signalperiod=9)
+		np.nan_to_num(macdhist)
 
-	growing_macd_hist = macdhist.copy()
-	growing_macd_hist[ growing_macd_hist < 0 ] = 0
+		growing_macd_hist = macdhist.copy()
+		growing_macd_hist[ growing_macd_hist < 0 ] = 0
 
 
 
-	ax4.set_ylabel('User Joins Momentum', color='g', size='large')
-	ax4.plot(userjoins['date'].values, macd, color='#4449EC', lw=2)
-	ax4.plot(userjoins['date'].values, macdsignal, color='#F69A4E', lw=2)
-	ax4.bar(userjoins['date'].values, macdhist,color='#FB5256',width=bar_width,align='center')
-	ax4.bar(userjoins['date'].values, growing_macd_hist,color='#4BF04F',width=bar_width,align='center')
+		ax4.set_ylabel('User Joins Momentum', color='g', size='large')
+		ax4.plot(userjoins['date'].values, macd, color='#4449EC', lw=2)
+		ax4.plot(userjoins['date'].values, macdsignal, color='#F69A4E', lw=2)
+		ax4.bar(userjoins['date'].values, macdhist,color='#FB5256',width=bar_width,align='center')
+		ax4.bar(userjoins['date'].values, growing_macd_hist,color='#4BF04F',width=bar_width,align='center')
 
 
 
@@ -1026,10 +1199,12 @@ def whalepooloverprice(bot, update):
 	plt.savefig(PATH_MSGS_OVER_PRICE, bbox_inches='tight')
 
 
-	msg = bot.sendPhoto(chat_id=WP_ROOM, photo=open(PATH_MSGS_OVER_PRICE,'rb'), caption="Whalepool Messages, Gif & User joins per hour over price" )
-	bot.sendMessage(chat_id=chat_id, text="'Whalepool Messages, Gif & User joins per hour over price' posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
+	# msg = bot.sendPhoto(chat_id=WP_ROOM, photo=open(PATH_MSGS_OVER_PRICE,'rb'), caption="Whalepool Messages, Gif & User joins per hour over price" )
+	msg = bot.sendPhoto(chat_id=chat_id, photo=open(PATH_MSGS_OVER_PRICE,'rb'), caption=CHART_TITLE )
+	# bot.sendMessage(chat_id=chat_id, text=CHART_TITLE+" posted to "+ROOM_ID_TO_NAME[WP_ROOM] )
 
 	os.remove(PATH_MSGS_OVER_PRICE)
+	os.remove('profile_pic.jpg')
 
 
 	# bot.sendMessage(chat_id=61697695, text="Posting... sometimes this can cause the telegram api to 'time out' ? so won't complete posting but trying anyway.." )
