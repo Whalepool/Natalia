@@ -1,41 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # A Simple way to send a message to telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler
-from telegram import MessageEntity, TelegramObject, ChatAction
-from pprint import pprint
-from functools import wraps
-from future.builtins import bytes
-from pymongo import MongoClient
-from pathlib import Path
-import numpy as np
-import argparse
-import logging
-import telegram
-import sys
-import json
-import random
 import datetime
-from dateutil.relativedelta import relativedelta
-import re 
+import json
+import logging
 import os
+import random
+import re
 import sys
-import yaml
-from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
-from PIL import Image
+from functools import wraps
+from pathlib import Path
+from pprint import pprint
 
+import matplotlib
+import numpy as np
 # For plotting messages / price charts
-import pandas as pd 
-
+import pandas as pd
 import requests
+import telegram
+import yaml
+from PIL import Image
+from dateutil.relativedelta import relativedelta
+from pymongo import MongoClient
+from telegram import MessageEntity
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from wordcloud import WordCloud, STOPWORDS
 
-import matplotlib 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.lines import Line2D
-from matplotlib.patches import Rectangle, Patch
-from matplotlib.finance import candlestick_ohlc
+from matplotlib.patches import Rectangle
 
 import talib as ta
 
@@ -1077,7 +1072,7 @@ def new_chat_member(bot, update):
 	user_id = update.message.from_user.id 
 	message_id = update.message.message_id 
 	chat_id = update.message.chat.id
-	name = get_name(update.message._new_chat_member)
+	name = get_name(update.message._new_chat_members)
 
 	if (chat_id == WP_ROOM) or (chat_id == SP_ROOM) or (chat_id == WP_WOMENS):
 		# Check user has a profile pic.. 
@@ -1096,7 +1091,7 @@ def new_chat_member(bot, update):
 		restricted = 0
 
 		# Bot was added to a group chat
-		if update.message._new_chat_member.username == BOTNAME:
+		if update.message._new_chat_members.username == BOTNAME:
 			return False
 		# Another user joined the chat
 		else:
