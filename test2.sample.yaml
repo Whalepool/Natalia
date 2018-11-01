@@ -5,8 +5,10 @@ bot_owner_chat_id: 61697695
 
 # Describe paths from root natalia.py file location
 # EG, natlia.py in /home/me/natalia/natlia.py 
+path_tmp      : 'data/tmp'
+path_stickers : 'data/stickers'
 # eg: we want to store pics in /home/me/natlia/data/pictures/
-path_pictures: 'data/pictures'
+path_pictures : 'data/pictures'
 
 
 # Required  (string)
@@ -50,6 +52,7 @@ rooms:
     # Logging for the room
     log_messages: False
     save_pictures: True 
+    save_stickers: True 
 
     # Forwarding msgs of importance rom room to a 'feed' room 
     feed_room_id: False

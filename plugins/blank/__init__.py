@@ -12,7 +12,7 @@ from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandl
 
 class Blank_Plugin_Class_Name:
 
-	def __init__(self, Natalia, plugin_index, priority_index)
+	def __init__(self, Natalia, plugin_index, priority_index):
 
 		self.n    = Natalia 
 		self.data = self.n.config['plugins'][priority_index]['data']
