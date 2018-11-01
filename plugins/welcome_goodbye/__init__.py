@@ -140,7 +140,7 @@ class Welcome_Goodbye:
 
 			# Else, receiving data for a room with no config
 			else: 
-				log.error('New chat memeber in room '+chat_id+' which is not in the rooms config')
+				log.error('New chat memeber in room '+str(chat_id)+' which is not in the rooms config')
 				
 
 
