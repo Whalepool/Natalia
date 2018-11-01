@@ -1,0 +1,122 @@
+bot_name         : 'Natlia'
+bot_token        : '3somebottoken'
+bot_owner_chat_id: 61697695
+
+
+# Describe paths from root natalia.py file location
+# EG, natlia.py in /home/me/natalia/natlia.py 
+# eg: we want to store pics in /home/me/natlia/data/pictures/
+path_pictures: 'data/pictures'
+
+
+# Required  (string)
+# replacable variables:  
+#   {name} inserts the users username or firstname
+# 
+room_no_cmd_in_public_chat_msg: '{name}, this command is not available in public chat .'
+
+
+
+###############################################
+# ROOMS
+###############################################
+
+# Required (string) 
+# Even if you do not plan on enforcing profile pic, just set an empty string  eg, : '' 
+# This is the message wrote to users instead of a welcome message if they join your room with no profile pic 
+room_profile_pic_required_msg : 'A profile pic is required for users of this chat. You do not have a profile pic so I have set you to read only for {days} days'
+
+# Required (int)
+# Even if not planning on mutiung new users for any days, just set to 1 for example
+# This is the amount of time users are muted for if they have no profile pic 
+room_profile_pic_muting_days  : 14
+
+# Required (list)
+# This is the list of rooms for your bot to operate in 
+rooms:
+
+  -1001223115449:
+    # Chat name/info
+    chat_name: 'Test room'
+    chat_link: '@fsdsgsdf412g'
+
+    # New user welcome/goodbye/restrictions
+    profile_pic_required: True
+    welcome_users       : True
+    custom_welcome_msg  : "hi {name}, this is a test custom welcome msg"
+    custom_bye_msg      : False
+    restrict_new_users_days: 2
+
+    # Logging for the room
+    log_messages: False
+    save_pictures: True 
+
+    # Forwarding msgs of importance rom room to a 'feed' room 
+    feed_room_id: False
+
+    # Channel Type 
+    channel_type: 'group'
+    
+    ############################
+
+
+
+
+plugin_folder: './plugins'
+plugin_main_module: '__init__'
+plugins:
+
+  ################################
+  # welcome_goodbye plugin
+  ################################
+  - 
+    name: 'welcome_goodbye'
+    data: 
+      welcome:
+        - "hi {name}, welcome" 
+      goodbye:
+        - "Bye {name}"
+
+  ################################
+  # admins plugin
+  ################################
+  - 
+    name: 'admins'
+    data: 
+      users: 
+        - 61697695  # flibbr
+
+  ################################
+  # Photohandler plugin
+  ################################
+  - 
+    name: 'photohandler'
+    data: 
+      yo: 'yes'
+
+  ################################
+  # request_reply plugin
+  ################################
+  # Available formats
+  # Simple request / reply
+  # - 
+  #   request: 'some-command'
+  #   reply: 'Some reply'
+
+  # Request, multiple replies
+  # -
+  #   request: 'some-command'
+  #   reply: 
+  #     -
+  #       msg: 'first msg reply'
+  #     - 
+  #       sticker: 'some-sticker-object-id'
+  #     -
+  #       msg: 'third msg reply'
+  -
+    name: 'request_reply'
+    data: 
+      - 
+        request: 'start'
+        reply: "test"
+        allow_in_group_chat: False 

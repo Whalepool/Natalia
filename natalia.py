@@ -38,9 +38,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle, Patch
-from matplotlib.finance import candlestick_ohlc
+# from matplotlib.finance import candlestick_ohlc
 
-import talib as ta
+# import talib as ta
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
