@@ -141,6 +141,15 @@ class Welcome_Goodbye:
 			# Else, receiving data for a room with no config
 			else: 
 				log.error('New chat memeber in room '+str(chat_id)+' which is not in the rooms config')
+
+				chat_info = bot.getChat(chat_id)
+
+				if self.n.config['leave_chat_if_no_rooms_setting'] == True:
+					log.error('Making bot leave chat '+chat_info.title )
+					bot.leaveChat(chat_info.chat_id)
+
+				else:
+					pprint(chat_info.__dict__)
 				
 
 
