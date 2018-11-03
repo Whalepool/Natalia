@@ -55,6 +55,7 @@ class Welcome_Goodbye:
 				joiner_is_self = True 
 
 
+
 			# Is a valid room we have settings for 
 			if chat_id in self.n.config['rooms']:
 
@@ -142,14 +143,20 @@ class Welcome_Goodbye:
 			else: 
 				log.error('New chat memeber in room '+str(chat_id)+' which is not in the rooms config')
 
-				chat_info = bot.getChat(chat_id)
+				# User joined unknown chat who is not self 
+				if name != self.n.config['bot_name']:
 
-				if self.n.config['leave_chat_if_no_rooms_setting'] == True:
-					log.error('Making bot leave chat '+chat_info.title )
-					bot.leaveChat(chat_info.chat_id)
+					# Get the chat info 
+					chat_info = bot.getChat(chat_id)
 
-				else:
-					pprint(chat_info.__dict__)
+					# Leave if setting set 
+					if self.n.config['leave_chat_if_no_rooms_setting'] == True:
+						log.error('Making bot leave chat '+chat_info.title )
+						bot.leaveChat(chat_id)
+
+
+
+				pprint(chat_info.__dict__)
 				
 
 
@@ -181,7 +188,6 @@ class Welcome_Goodbye:
 			name       = self.n.get_name(update)
 
 
-			log.error(str(name)+' left '+room_data['chat_name']+', '+room_data['chat_link']+', chat_id: '+str(chat_id))
 
 			# Is a valid room we have settings for 
 			if chat_id in self.n.config['rooms']:
