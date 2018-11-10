@@ -26,9 +26,6 @@ from telegram.ext import Updater
 from telegram.ext import CommandHandler
 
 
-
-
-
 class Natalia( PluginLoader, Errors, Rooms ): 
 
 	

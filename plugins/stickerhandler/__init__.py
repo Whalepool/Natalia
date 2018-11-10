@@ -6,7 +6,7 @@ from functools import partial
 from utils.str import log
 from datetime import datetime 
 from PIL import Image
-
+import traceback 
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
 
 

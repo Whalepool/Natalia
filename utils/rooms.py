@@ -2,7 +2,7 @@
 # Datetime
 import json  
 from os.path import basename 
-
+import traceback 
 from pprint import pprint 
 from utils.str import Str, log
 
@@ -29,8 +29,12 @@ class Rooms:
 			log.error('Tried to delete last chat message but messagee_id was not int: '+str(self.config['rooms'][chat_id]['last_room_self_msg']))
 			return True 
 
-		message_id = self.config['rooms'][chat_id]['last_room_self_msg']
-		bot.delete_message(chat_id=chat_id, message_id=message_id)
+		try:
+			message_id = self.config['rooms'][chat_id]['last_room_self_msg']
+			bot.delete_message(chat_id=chat_id, message_id=message_id)
+		except Exception as e:
+			del self.config['rooms'][chat_id]['last_room_self_msg']
+			log.error(traceback.format_exc())
 
 
 

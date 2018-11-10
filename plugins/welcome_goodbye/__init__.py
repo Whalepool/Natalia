@@ -8,7 +8,7 @@ from utils.str import Str, log
 import datetime
 from dateutil.relativedelta import relativedelta
 import random
-
+import traceback 
 
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
 
@@ -86,20 +86,24 @@ class Welcome_Goodbye:
 							msg = update.message.reply_text(self.n.config['room_profile_pic_required_msg'].format(days=self.n.config['room_profile_pic_muting_days']))
 
 							# Store this reply message_id as the last one we should delete when msging in public chats 
-							self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
+							if isinstance(msg.message_id, int):
+								self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
 
-						now = datetime.now()
-						rd = relativedelta(days=self.n.config['room_profile_pic_muting_days'])
+						muting_days = self.n.config['room_profile_pic_muting_days']
 
 						# If a per room setting is longer duration than muting without profile pic duration, then use that instead
 						if room_data['restrict_new_users_days'] > self.n.config['room_profile_pic_muting_days']:
-							rd = relativedelta(days=room_data['restrict_new_users_days'])
+							muting_days = room_data['restrict_new_users_days']
+
+
+						now = datetime.now()
+						rd = relativedelta(days=muting_days)
 
 
 						# Retrict them
 						bot.restrict_chat_member(chat_id, user_id, until_date=(now + rd), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)	
 
-						log.print('Restricting '+str(name)+' complete, end in '+str(self.n.config['room_profile_pic_muting_days'])+' days at '+str(now+rd))
+						log.print('Restricting '+str(name)+' complete, end in '+str(muting_days)+' days at '+str(now+rd))
 						# end 
 						return True 
 
@@ -127,7 +131,8 @@ class Welcome_Goodbye:
 						msg = update.message.reply_text(msg)
 
 						# Store this reply message_id as the last one we should delete when msging in public chats 
-						self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
+						if isinstance(msg.message_id, int):
+							self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
 
 
 					now = datetime.now()
@@ -219,7 +224,8 @@ class Welcome_Goodbye:
 				msg = bye_msg.format(name=name)
 
 				msg = self.n.bot.sendMessage(chat_id=chat_id, text=msg,parse_mode="Markdown",disable_web_page_preview=1)
-				self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
+				if isinstance(msg.message_id, int):
+					self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
 
 
 			# Else, receiving data for a room with no config

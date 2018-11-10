@@ -26,6 +26,22 @@ For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram
 ### TODO
 
 
+# Auto delete direct file 
+#	Unless posted or forwarded by a mod 
+
+# If mod replys to message:
+	ban 					bot.kick_chat_member(chat_id, user_id, until_date=None)
+	unban					bot.unban_chat_member(chat_id, user_id):  					chat_id/channelusername, user_id, 
+	readonly				bot.restrict_chat_member(chat_id, user_id, until_date=None)
+	nogifs 					bot.restrict_chat_member(chat_id, user_id, until_date=None, can_send_messages=True)
+		global/ None
+		duration
+
+	autodelete				
+
+
+
+
 	timestamp, messageid, chatid, userid, username, type( command, sticker, gif, join, leave, video, pinned_message, message ), data 
 
 	request
