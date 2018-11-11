@@ -70,6 +70,15 @@ plugin_main_module: '__init__'
 plugins:
 
   ################################
+  # admins plugin
+  ################################
+  - 
+    name: 'admins'
+    data: 
+      users: 
+        - 61697695  # flibbr
+
+  ################################
   # welcome_goodbye plugin
   ################################
   - 
@@ -79,15 +88,6 @@ plugins:
         - "hi {name}, welcome" 
       goodbye:
         - "Bye {name}"
-
-  ################################
-  # admins plugin
-  ################################
-  - 
-    name: 'admins'
-    data: 
-      users: 
-        - 61697695  # flibbr
 
   ################################
   # Photohandler plugin

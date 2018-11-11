@@ -83,14 +83,6 @@ class Rooms:
 				errors += 1
 				errors_list.append('missing chat_name')
 
-			if 'chat_link' not in data:
-				errors += 1
-				errors_list.append('missing chat_link, eg: @myroom')
-			else:
-				if data['chat_link'][0] != '@':
-					errors += 1
-					errors_list.append('chat id is not valid, must be either int, positive or negative, or start with a "@" sign.')
-
 
 			if 'profile_pic_required' not in data:
 				errors += 1

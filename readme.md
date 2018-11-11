@@ -8,28 +8,31 @@ A simple telegram bot to help with the moderation of the telegram channels utili
 2) Install pip requirements `sudo pip3.6 install -r requirements.pip`    
 
 ### Setup config
-`cp config.sample.yaml config.yaml`  
-Edit the config.yaml file accordingly  
+`cp test2.sample.yaml test2.yaml`  
+Edit the test2.yaml file accordingly  
 You will have to edit/set some of the rooms under `natalia.py` for your room id's and feed room ids etc  
 
 ### Run
 To run:  
-`python3.6 natalia.py`
+`python3.6 test2.py`
 
 For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram   
 
 ![Profile pic](http://i.imgur.com/iIUSRDG.jpg)
 
 
- helpers.escape_markdown(
+
  
 ### TODO
 
+Escape users names when writing messages to them `helpers.escape_markdown(` 
 
-# Auto delete direct file 
-#	Unless posted or forwarded by a mod 
 
-# If mod replys to message:
+Auto delete direct file 
+	Unless posted or forwarded by a mod 
+
+If mod replys to message: - Filters.reply(message
+
 	ban 					bot.kick_chat_member(chat_id, user_id, until_date=None)
 	unban					bot.unban_chat_member(chat_id, user_id):  					chat_id/channelusername, user_id, 
 	readonly				bot.restrict_chat_member(chat_id, user_id, until_date=None)

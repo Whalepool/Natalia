@@ -9,7 +9,8 @@ from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandl
 
 
 
-
+##############################################
+# EDIT THIS FUNCTION NAME TO BE UR PLUGIN CLASS NAME
 class Blank_Plugin_Class_Name:
 
 	def __init__(self, Natalia, plugin_index, priority_index):
@@ -19,8 +20,7 @@ class Blank_Plugin_Class_Name:
 		self.check_config_integrity()
 
 		##############################################
-		# END default, begin plugin
-		##############################################
+		# ADD HOOKS HERE 
 
 		# log.heading2('Some event handler log output')
 		# self.n.dp.add_handler( .. , group=priority_index)
@@ -29,30 +29,36 @@ class Blank_Plugin_Class_Name:
 
 	def check_config_integrity(self):
 
-		log.heading2('log output that plugin is going to check confi')
-		check       = ['welcome','goodbye']
+		log.print('Checking XXXX plugin config requirements ')
+
+
+		# Some list of vars to check 
+		check       = ['some-example-requirement']
+
+		# List of error messages to report back on plugin config checking failure 
 		errors_list = []
+
+		# error counter 
 		errors      = 0
 
-		for check_type in check: 
-			if check_type not in self.data:
-				errors += 1
-				errors_list.append('Missing '+check_type+' messages in config')
+		# self.data contains the plugin data from the config file
 
-			elif type(self.data[check_type]) is not list:
-				errors += 1
-				errors_list.append('No '+check_type+' messages found')
+		# eg: 
+		# If the variable we want to check for isn't in the plugin config data 
+		# if check[0] not in self.data:
 
-			else:
-				if (self.data[check_type][0] == ''):
-					errors += 1
-					errors_list.append('First '+check_type+' message is empty')
+		# 	Log the error
+		# 	errors_list.append('the variable in check list was not found in plugin config data')
+		#	errors += 1
 
-		self.n.check_for_errors(errors, errors_list)
+		# Check we dont have any errors loading the plugin config 
+		# self.n.check_for_errors(errors, errors_list)
 
 
 
 
 def run(Natalia, plugin_index, priority_index):
 
+	##############################################
+	# SET THIS TO UR PLUGINS CLASSNAME 
 	return Blank_Plugin_Class_Name(Natalia, plugin_index, priority_index) 

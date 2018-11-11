@@ -138,12 +138,6 @@ class Welcome_Goodbye:
 					now = datetime.now()
 					rd = relativedelta(days=room_data['restrict_new_users_days'])
 
-					pprint(now)
-					pprint(chat_id)
-					pprint(room_data)
-					pprint(rd)
-					pprint(str(now + rd))
-
 					# Restrict them 
 					bot.restrict_chat_member(chat_id, user_id, until_date=(now + rd), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
 
