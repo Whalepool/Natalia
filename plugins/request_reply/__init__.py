@@ -8,7 +8,7 @@ from utils.str import Str, log
 
 
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler
-
+from telegram.utils import helpers
 
 
 
@@ -63,8 +63,7 @@ class Request_Reply:
 			self.n.rooms_clear_last_self_msg(bot, chat_id)
 
 			# Tell them the profile pic is required
-			msg = update.message.reply_text(self.n.config['room_no_cmd_in_public_chat_msg'].format(name=name))
-
+			msg = update.message.reply_text(self.n.config['room_no_cmd_in_public_chat_msg'].format(name=helpers.escape_markdown(name)))
 			# Store this reply message_id as the last one we should delete when msging in public chats 
 			self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
 
@@ -80,7 +79,7 @@ class Request_Reply:
 
 				# Regular replying msg 
 				if 'msg' in r: 
-					msg = r['msg'].format(name=name, first='A')
+					msg = r['msg'].format(name=helpers.escape_markdown(name), first='A')
 					self.n.bot.sendMessage(chat_id=chat_id, text=msg,parse_mode="Markdown",disable_web_page_preview=1)
 
 				# Sticker reply
@@ -89,7 +88,7 @@ class Request_Reply:
 
 		# Is a singular reply 
 		else: 
-			msg = msg.format(name=name, first='A')
+			msg = msg.format(name=helpers.escape_markdown(name), first='A')
 			self.n.bot.sendMessage(chat_id=chat_id, text=msg,parse_mode="Markdown",disable_web_page_preview=1)
 
 

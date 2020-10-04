@@ -11,7 +11,8 @@ import random
 import traceback 
 
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
-
+from telegram.utils import helpers
+from telegram import ChatPermissions
 
 
 
@@ -101,7 +102,12 @@ class Welcome_Goodbye:
 
 
 						# Retrict them
-						bot.restrict_chat_member(chat_id, user_id, until_date=(now + rd), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)	
+						# restrict_chat_member(chat_id, user_id, permissions, until_date=None, timeout=None, **kwargs)
+						perms = ChatPermissions(can_send_messages=False, can_send_media_messages=False,
+                           can_send_polls=False, can_send_other_messages=False,
+                           can_add_web_page_previews=False, can_change_info=False,
+                           can_invite_users=True, can_pin_messages=False)
+						bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))	
 
 						log.print('Restricting '+str(name)+' complete, end in '+str(muting_days)+' days at '+str(now+rd))
 						# end 
@@ -127,7 +133,7 @@ class Welcome_Goodbye:
 
 					if room_data['welcome_users'] == True: 
 						# Reply with the welcome message
-						msg = welcome_msg.format(name=name)
+						msg = welcome_msg.format(name=helpers.escape_markdown(name))
 						msg = update.message.reply_text(msg)
 
 						# Store this reply message_id as the last one we should delete when msging in public chats 
@@ -139,7 +145,12 @@ class Welcome_Goodbye:
 					rd = relativedelta(days=room_data['restrict_new_users_days'])
 
 					# Restrict them 
-					bot.restrict_chat_member(chat_id, user_id, until_date=(now + rd), can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False, can_add_web_page_previews=False)
+
+					perms = ChatPermissions(can_send_messages=False, can_send_media_messages=False,
+                           can_send_polls=False, can_send_other_messages=False,
+                           can_add_web_page_previews=False, can_change_info=False,
+                           can_invite_users=True, can_pin_messages=False)
+					bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))	
 
 					log.print('Restricting '+str(name)+' complete, end in '+str(room_data['restrict_new_users_days'])+' days at '+str(now+rd))
 					return True 
@@ -215,7 +226,7 @@ class Welcome_Goodbye:
 				if room_data['custom_bye_msg'] != False:
 					bye_msg = room_data['custom_bye_msg']
 
-				msg = bye_msg.format(name=name)
+				msg = bye_msg.format(name=helpers.escape_markdown(name))
 
 				msg = self.n.bot.sendMessage(chat_id=chat_id, text=msg,parse_mode="Markdown",disable_web_page_preview=1)
 				if isinstance(msg.message_id, int):

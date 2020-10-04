@@ -25,8 +25,6 @@ For more info join [@whalepoolbtc](https://t.me/whalepoolbtc) on telegram
  
 ### TODO
 
-Escape users names when writing messages to them `helpers.escape_markdown(` 
-
 
 Auto delete direct file 
 	Unless posted or forwarded by a mod 
