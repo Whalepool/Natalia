@@ -39,12 +39,14 @@ class PM_Logger:
                 chat = update.message.chat
                 text = update.message.text
 
-                log.print('messageid(%s), chat_id(%s), firstname(%s) username(@%s) in pm said: %s' % (
-                    message_id, chat_id, chat.first_name, chat.username, text  ))
+                if chat.type == 'private': 
+                    log.print('messageid(%s),chat_id(%s), firstname(%s) username(@%s) in pm said: %s' % (
+                        message_id, chat_id, chat.first_name, chat.username, text  ))
 
 
             except Exception as e:
                 log.error(traceback.format_exc())
+                print(update.message.__dict__)
 
 
 
