@@ -32,23 +32,35 @@ class PM_Logger:
             """ Echo's a PM message"""
 
             try:
-                message_id = update.message.message_id 
-                chat_id    = update.message.chat.id
-
                 name = self.n.get_name(update)
-                chat = update.message.chat
-                text = update.message.text
+
+                if update['edited_message'] is not None:
+
+                    chat_id = update.edited_message.chat.id 
+                    chat = update.edited_message.chat
+                    message_id = update.edited_message.message_id
+                    text = update.edited_message.text 
+
+                    msg = 'EDITED PM: %s, messageid(%s), chat_id(%s), first_name(%s), username(@%s) edited message to (%s)' % (
+                        __file__, message_id, chat_id, chat.first_name, chat.username, text ) 
+
+                else: 
+                    chat_id    = update.message.chat.id
+                    chat = update.message.chat
+
+                    message_id = update.message.message_id 
+                    text = update.message.text
+
+                    msg = 'PM: %s, messageid(%s),chat_id(%s), firstname(%s) username(@%s) in pm said: %s' % (
+                        __file__, message_id, chat_id, chat.first_name, chat.username, text  )
 
                 if chat.type == 'private': 
-                    log.print('messageid(%s),chat_id(%s), firstname(%s) username(@%s) in pm said: %s' % (
-                        message_id, chat_id, chat.first_name, chat.username, text  ))
+                    log.print(msg) 
 
 
             except Exception as e:
                 log.error(traceback.format_exc())
-                print(update.message.__dict__)
-
-
+                pprint(update.__dict__)
 
 
 def run(Natalia, plugin_index, priority_index):
