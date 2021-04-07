@@ -42,7 +42,8 @@ class Sticker_Handler:
                                 if ('save_stickers' not in room_data) or (room_data['save_stickers'] == False):
                                         return False 
 
-                                
+                                pprint( update.message.sticker.__dict__ )
+                                print('^ sticker')
                                 # Otherwise, get some data 
                                 message_id = update.message.message_id 
                                 user_id = update.message.from_user.id 

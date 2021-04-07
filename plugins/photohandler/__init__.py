@@ -4,7 +4,7 @@ from pprint import pprint
 import os 
 from functools import partial
 from utils.str import log
-from datetime import datetime 
+import datetime
 from utils.str import Str, log
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
 
@@ -61,7 +61,7 @@ class Photo_Handler:
                     message_id = update.message.message_id 
                     user_id = update.message.from_user.id 
                     name = self.n.get_name(update)
-                    timestamp = datetime.datetime.now()
+                    timestamp = int(datetime.utcnow().strftime("%s"))
                     caption = update.message.caption
                     log.print('Saving picture posted by '+name+' in '+room_data['chat_name'])
 
@@ -137,7 +137,7 @@ class Photo_Handler:
                                 message_id = update.message.message_id 
                                 user_id = update.message.from_user.id 
                                 name = self.n.get_name(update)
-                                timestamp = datetime.datetime.now()
+                                timestamp = int(datetime.utcnow().strftime("%s"))
 
 
                                 images = ['image/jpeg','image/png']
