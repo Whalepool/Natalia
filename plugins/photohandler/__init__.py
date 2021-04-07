@@ -4,7 +4,7 @@ from pprint import pprint
 import os 
 from functools import partial
 from utils.str import log
-import datetime
+from datetime import datetime
 from utils.str import Str, log
 from telegram.ext import CommandHandler, ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
 
