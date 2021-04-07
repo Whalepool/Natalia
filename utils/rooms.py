@@ -73,7 +73,7 @@ class Rooms:
 
                         # IF the chat id is a string, then it must start  with a "@" for a room name
                         if isinstance(chat_id, str):
-                                if chat_id[0] is not '@':
+                                if chat_id[0] != '@':
                                         errors += 1
                                         errors_list.append('chat id is not valid, must be either int, positive or negative, or start with a "@" sign.')
 

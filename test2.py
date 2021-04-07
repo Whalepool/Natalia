@@ -40,7 +40,7 @@ class Natalia( PluginLoader, Errors, Rooms, Users ):
         # config_file = PATH+'/test2.sample.yaml'
         log.heading('Loading config '+config_file)
         with open(config_file) as fp:
-                config = yaml.load(fp)
+                config = yaml.load(fp, Loader=yaml.FullLoader)
 
 
 
