@@ -98,9 +98,10 @@ class Photo_Handler:
                                 ):
 
                                     # Make a timestamp
-                                    epoch  = datetime.utcfromtimestamp(0)
-                                    now_utc = datetime.utcnow()
-                                    ts = int((now_utc - epoch).total_seconds())
+                                    # epoch  = datetime.datetime.utcfromtimestamp(0)
+                                    # know_utc = datetime.utcnow()
+                                    # ts = int((now_utc - epoch).total_seconds())
+                                    ts = int(datetime.utcnow().strftime("%s"))
 
                                     # Set the pic size to downloaded 
                                     do_pics[index]['downloaded'] = 1 
