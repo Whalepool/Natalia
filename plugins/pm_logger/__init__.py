@@ -79,6 +79,7 @@ class PM_Logger:
             except Exception as e:
                 log.error(traceback.format_exc())
                 pprint(update.__dict__)
+                pprint(update.channel_post.__dict__)
 
 
 def run(Natalia, plugin_index, priority_index):
