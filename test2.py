@@ -19,6 +19,7 @@ from utils.str import Str, log
 from utils.errors import Errors
 from utils.pluginloader import PluginLoader
 from utils.rooms import Rooms
+from utils.users import Users
 
 # Python telegram bot
 import telegram
@@ -27,9 +28,8 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
-class Natalia( PluginLoader, Errors, Rooms ): 
+class Natalia( PluginLoader, Errors, Rooms, Users ): 
 
-        
         # Global variables
         PATH = os.path.dirname(os.path.abspath(__file__))
         log.title('Running Natlia in '+PATH)
@@ -61,6 +61,7 @@ class Natalia( PluginLoader, Errors, Rooms ):
         client  = MongoClient('mongodb://localhost:27017')
         db = client.natalia_tg_bot
 
+        
 
         # Bot error handler
         def error(self, bot, update, error):
@@ -71,40 +72,20 @@ class Natalia( PluginLoader, Errors, Rooms ):
         # Resolve message data to a readable name                       
         def get_name(self, update):
 
-                #pprint(update.message.from_user.username)
+            try:
+                name = update.message.from_user.username
 
+                if (name == 'None') or (name == None):
+                    name = update.message.from_user.first_name
+
+            except (NameError, AttributeError):
                 try:
-                        name = update.message.from_user.username
-
-                        # pprint('1')
-                        # pprint(name)
-                        # pprint(type(name))
-
-                        if (name == 'None') or (name == None):
-                                name = update.message.from_user.first_name
-
-                                # pprint('2')
-                                # pprint(name)
-                                # pprint(type(name))
+                    name = update.message.from_user.first_name
 
                 except (NameError, AttributeError):
-                        try:
-                                name = update.message.from_user.first_name
+                    name = "no name"
 
-                                # pprint('3')
-                                # pprint(name)
-                                # pprint(type(name))
-
-                        except (NameError, AttributeError):
-                                name = "no name"
-
-
-
-                # pprint('4')
-                #pprint(name)
-                # pprint(type(name))
-                        
-                return name
+            return name
 
 
 
@@ -115,7 +96,7 @@ class Natalia( PluginLoader, Errors, Rooms ):
             Errors.__init__(self)
             Rooms.__init__(self)
             PluginLoader.__init__(self)
-
+            Users.__init__(self)
 
             # Load plugins 
             for i in self.getPlugins():

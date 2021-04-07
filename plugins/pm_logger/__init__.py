@@ -31,6 +31,14 @@ class PM_Logger:
         def echo_pm(self, bot, update):
             """ Echo's a PM message"""
 
+#            print('echo pm: %s ' % (__file__ ))
+#            pprint('update.message.__dict__')
+#            pprint(update.message.__dict__)
+#            pprint('update.message.from_user.__dict__)')
+#            pprint(update.message.from_user.__dict__)
+#            pprint('update.message.chat.__dict__')
+#            pprint(update.message.chat.__dict__)
+#
             try:
                 name = self.n.get_name(update)
 
@@ -56,6 +64,7 @@ class PM_Logger:
 
                 if chat.type == 'private': 
                     log.print(msg) 
+                    self.n.check_user_exists( chat_id, chat.first_name, chat.username ) 
 
 
             except Exception as e:

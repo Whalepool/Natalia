@@ -61,7 +61,7 @@ class Photo_Handler:
                     message_id = update.message.message_id 
                     user_id = update.message.from_user.id 
                     name = self.n.get_name(update)
-                    timestamp = datetime.now()
+                    timestamp = datetime.datetime.now()
                     caption = update.message.caption
                     log.print('Saving picture posted by '+name+' in '+room_data['chat_name'])
 
@@ -136,7 +136,7 @@ class Photo_Handler:
                                 message_id = update.message.message_id 
                                 user_id = update.message.from_user.id 
                                 name = self.n.get_name(update)
-                                timestamp = datetime.now()
+                                timestamp = datetime.datetime.now()
 
 
                                 images = ['image/jpeg','image/png']

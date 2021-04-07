@@ -47,7 +47,7 @@ class Sticker_Handler:
 				message_id = update.message.message_id 
 				user_id = update.message.from_user.id 
 				name = self.n.get_name(update)
-				timestamp = datetime.now()
+				timestamp = datetime.datetime.now()
 				sticker_id = update.message.sticker.file_id
 				log.print('Saving sticker posted by '+name+' in '+room_data['chat_name'])
 

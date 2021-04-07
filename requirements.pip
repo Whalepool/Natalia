@@ -6,3 +6,4 @@ wordcloud
 pyyaml
 requests
 matplotlib
+captcha
