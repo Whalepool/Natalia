@@ -35,7 +35,7 @@ class Welcome_Goodbye:
             self.n.dp.add_handler(MessageHandler(Filters.status_update.left_chat_member, self.left_chat_member), group=priority_index)
 
 
-        def new_chat_member(self, bot, update):
+        def new_chat_member(self, update, callback):
             """ Welcomes new chat member """
             
             # pprint('New chat member %s ' % (__file__ ))
@@ -68,12 +68,12 @@ class Welcome_Goodbye:
                     log.error('New chat memeber in room '+str(chat_id)+' which is not in the rooms config')
 
                     # Get the chat info 
-                    chat_info = bot.getChat(chat_id)
+                    chat_info = self.n.bot.getChat(chat_id)
 
                     # Leave if setting set 
                     if self.n.config['leave_chat_if_no_rooms_setting'] == True:
                         log.error('Making bot leave chat '+chat_info.title )
-                        bot.leaveChat(chat_id)
+                        self.n.bot.leaveChat(chat_id)
 
                     pprint(chat_info.__dict__)
                     return 
@@ -94,7 +94,7 @@ class Welcome_Goodbye:
 
                 if check_profile_pic == True:
                     # Get the users profile pics
-                    profile_pics = bot.getUserProfilePhotos(user_id=user_id)
+                    profile_pics = self.n.bot.getUserProfilePhotos(user_id=user_id)
 
                     # If no profile pic...
                     if profile_pics.total_count == 0:
@@ -103,7 +103,7 @@ class Welcome_Goodbye:
                         log.print(str(name)+' has no profile pic, restricting')
 
                         # Delete any previous messages
-                        self.n.rooms_clear_last_self_msg(bot, chat_id)
+                        self.n.rooms_clear_last_self_msg(chat_id)
 
                         if room_data['welcome_users'] == True: 
                             # Tell them the profile pic is required
@@ -133,7 +133,7 @@ class Welcome_Goodbye:
    can_send_polls=False, can_send_other_messages=False,
    can_add_web_page_previews=False, can_change_info=False,
    can_invite_users=True, can_pin_messages=False)
-                        bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))        
+                        self.n.bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))        
 
                         log.print('Restricting '+str(name)+' complete, end in '+str(muting_days)+' days at '+str(now+rd))
                         # end 
@@ -187,7 +187,7 @@ class Welcome_Goodbye:
                             can_pin_messages=False
                         )
                     try: 
-                        bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))        
+                        self.n.bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))        
                         log.print('Restricting '+str(name)+' complete, end in '+str(room_data['restrict_new_users_days'])+' days at '+str(now+rd))
                     except Exception:
                         log.error('Unable to restrict user %s in %s, do not have permissions to restrict' % (name, room_data['chat_name']))
@@ -206,7 +206,7 @@ class Welcome_Goodbye:
                         welcome_msg = room_data['custom_welcome_msg']
 
                     # Delete any previous messages
-                    self.n.rooms_clear_last_self_msg(bot, chat_id)
+                    self.n.rooms_clear_last_self_msg(chat_id)
 
                     # Reply with the welcome message
                     msg = welcome_msg.format(name=helpers.escape_markdown(name))
@@ -236,7 +236,7 @@ class Welcome_Goodbye:
 
 
 
-        def left_chat_member(self, bot, update):
+        def left_chat_member(self, update, callback):
 
             # print('User left chat..')
             # pprint(update.__dict__)
@@ -267,7 +267,7 @@ class Welcome_Goodbye:
                     log.print(str(name)+' left  chat: '+room_data['chat_name']+', @'+chat_link+', chat_id: '+str(chat_id))
 
                     # Delete any previous messages
-                    self.n.rooms_clear_last_self_msg(bot, chat_id)
+                    self.n.rooms_clear_last_self_msg(chat_id)
                     
                     try: 
                         if room_data['goodbye_users'] == True: 

@@ -35,7 +35,7 @@ class Photo_Handler:
 
 
 
-        def photo_message(self, bot, update):
+        def photo_message(self, update):
 
             try: 
                 chat_id = update.message.chat.id
@@ -112,7 +112,7 @@ class Photo_Handler:
                                     fpath = full_path+'/'+fname 
 
                                     # Download the pic
-                                    pic = bot.getFile(p.file_id)
+                                    pic = self.n.bot.getFile(p.file_id)
                                     pic.download(fpath)
 
                                     # Output log 
@@ -124,7 +124,7 @@ class Photo_Handler:
 
 
 
-        def document_picture(self, bot, update):
+        def document_picture(self, update):
 
                 try: 
                         chat_id = update.message.chat.id
@@ -145,14 +145,14 @@ class Photo_Handler:
                                         log.print(str(name)+' uploaded a picture in a compressed format to '+room_data['chat_name'])
 
                                         # Delete any previous messages
-                                        self.n.rooms_clear_last_self_msg(bot, chat_id)
+                                        self.n.rooms_clear_last_self_msg(chat_id)
 
                                         # delete the uploaded pic
-                                        bot.delete_message(chat_id=chat_id, message_id=message_id)
+                                        self.n.bot.delete_message(chat_id=chat_id, message_id=message_id)
                                         log.print('deleted offending uncompressed pic')
 
                                         # Msg that the pic got deleted
-                                        msg = bot.sendMessage(chat_id=chat_id, text=name+", I deleted that pic you just posted because it is an uncompressed format, please use the \'compress\' format when posting pictures.",parse_mode="Markdown",disable_web_page_preview=1)
+                                        msg = self.n.bot.sendMessage(chat_id=chat_id, text=name+", I deleted that pic you just posted because it is an uncompressed format, please use the \'compress\' format when posting pictures.",parse_mode="Markdown",disable_web_page_preview=1)
                                         log.print('messaged '+name+' notifying of deletion')
                                         self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
                                         

@@ -37,7 +37,7 @@ class Document_Delete:
                 ), self.del_document), group=priority_index)
 
 
-        def del_document(self, bot, update):
+        def del_document(self, update, callback):
 
 
                 user_id = update.message.from_user.id
@@ -67,10 +67,10 @@ class Document_Delete:
 
 
                 # Message the chat saying posting files is not allowed 
-                bot.sendMessage(chat_id=chat_id, text=name+", posting files is not allowed in this room, so I deleted it, details have been forwarded to mods for review.",parse_mode="Markdown",disable_web_page_preview=1)
-                bot.sendMessage(chat_id=self.admin_room_id, text=name+' posted a file in '+room_data['chat_name'])
-                bot.forward_message(chat_id=self.admin_room_id, from_chat_id=chat_id, message_id=message_id)
-                bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
+                self.n.bot.sendMessage(chat_id=chat_id, text=name+", posting files is not allowed in this room, so I deleted it, details have been forwarded to mods for review.",parse_mode="Markdown",disable_web_page_preview=1)
+                self.n.bot.sendMessage(chat_id=self.admin_room_id, text=name+' posted a file in '+room_data['chat_name'])
+                self.n.bot.forward_message(chat_id=self.admin_room_id, from_chat_id=chat_id, message_id=message_id)
+                self.n.bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
 
 
 

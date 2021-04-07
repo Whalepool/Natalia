@@ -62,7 +62,10 @@ class Captcha_Unlock:
             self.n.update_user( user_id, info ) 
 
 
-        def check_captcha_reply(self, bot, update):
+        def check_captcha_reply(self, update, callback):
+
+            pprint(update.__dict__)
+            return 
 
             if update.message.reply_to_message is None:
                 return
@@ -115,7 +118,7 @@ class Captcha_Unlock:
 
 
 
-        def start_command_check(self, bot, update):
+        def start_command_check(self, update, callback):
 
             if update.message.chat.type != 'private':
                 return 

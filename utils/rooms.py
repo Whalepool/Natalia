@@ -19,7 +19,7 @@ class Rooms:
 
 
 
-        def rooms_clear_last_self_msg(self, bot, chat_id):
+        def rooms_clear_last_self_msg(self, chat_id):
 
 
                 if 'last_room_self_msg' not in self.config['rooms'][chat_id]:
@@ -31,7 +31,7 @@ class Rooms:
 
                 try:
                         message_id = self.config['rooms'][chat_id]['last_room_self_msg']
-                        bot.delete_message(chat_id=chat_id, message_id=message_id)
+                        self.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 except Exception as e:
                         del self.config['rooms'][chat_id]['last_room_self_msg']
                         log.error('Unable to delete last message, message no longer exists.')

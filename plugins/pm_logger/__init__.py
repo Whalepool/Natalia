@@ -21,14 +21,20 @@ class PM_Logger:
 
             ##############################################
             # ADD HOOKS HERE 
+            self.n.dp.add_handler(CommandHandler('test', self.test))
+
             self.n.dp.add_handler(MessageHandler(Filters.text & ~Filters.command, self.echo_pm), group=priority_index)
 
+        def test( self, update, callback):
+            pass 
+            # pprint(update.message.from_user.__dict__)
+            # self.n.bot.sendMessage(chat_id=61697695, text='hello world',parse_mode="Markdown",disable_web_page_preview=1)
 
         def check_config_integrity(self):
             pass 
 
 
-        def echo_pm(self, bot, update):
+        def echo_pm(self, update, callback):
             """ Echo's a PM message"""
 
 #            print('echo pm: %s ' % (__file__ ))

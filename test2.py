@@ -56,6 +56,8 @@ class Natalia( PluginLoader, Errors, Rooms, Users ):
         updater = Updater(bot=bot,workers=10)
         dp      = updater.dispatcher
 
+        
+
         # Mongodb 
         log.heading('Connecting to mongo')
         try: 
