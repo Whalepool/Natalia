@@ -38,10 +38,10 @@ class Welcome_Goodbye:
         def new_chat_member(self, update, callback):
             """ Welcomes new chat member """
             
-            # pprint('New chat member %s ' % (__file__ ))
-            # pprint(update.__dict__)
-            # pprint(update.message.__dict__)
-            # pprint(update.message.new_chat_members[0].__dict__)
+            pprint('New chat member %s ' % (__file__ ))
+            pprint(update.__dict__)
+            pprint(update.message.__dict__)
+            pprint(update.message.new_chat_members[0].__dict__)
 
             try: 
 
