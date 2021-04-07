@@ -1,6 +1,7 @@
 bot_name         : 'Natlia'
 bot_token        : '3somebottoken'
 bot_owner_chat_id: 61697695
+mongodb_login: 'mongodb://localhost:27017'
 
 
 # Describe paths from root natalia.py file location

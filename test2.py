@@ -59,10 +59,10 @@ class Natalia( PluginLoader, Errors, Rooms, Users ):
         # Mongodb 
         log.heading('Connecting to mongo')
         try: 
-            client  = MongoClient('mongodb://localhost:27017')
+            client  = MongoClient(config['mongodb_login'])
             db = client.natalia_tg_bot
         except Exception as e:
-            log.error('Unable to connect to mongoclient on localhost 27017')
+            log.error('Unable to connect to mongoclient on %s' % config['mongodb_login'])
             pprint(e)
             exit()
 
