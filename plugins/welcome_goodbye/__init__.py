@@ -125,7 +125,6 @@ class Welcome_Goodbye:
 
 
                         self.n.update_user_room( user_id, chat_id, 'auto_restrict' )
-                        pprint(self.n.user[user_id])
 
                         # Retrict them
                         # restrict_chat_member(chat_id, user_id, permissions, until_date=None, timeout=None, **kwargs)
@@ -209,7 +208,8 @@ class Welcome_Goodbye:
                     self.n.rooms_clear_last_self_msg(chat_id)
 
                     # Reply with the welcome message
-                    msg = welcome_msg.format(name=helpers.escape_markdown(name))
+                    name = helpers.escape_markdown(name)
+                    msg = welcome_msg.format(name=name)
                     msg = update.message.reply_text(msg)
 
                     # Store this reply message_id as the last one we should delete when msging in public chats 

@@ -72,7 +72,6 @@ class Admins:
 
                 string = command+' - '+scope+' - '+length
 
-                pprint(string)
                 self.n.bot.sendMessage(chat_id=chat_id, text=string)
                 # pprint(command)
                 # pprint(scope)

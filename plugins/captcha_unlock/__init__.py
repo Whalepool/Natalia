@@ -64,8 +64,8 @@ class Captcha_Unlock:
 
         def check_captcha_reply(self, update, callback):
 
-            pprint(update.__dict__)
-            return 
+            if update.message is None:
+                return 
 
             if update.message.reply_to_message is None:
                 return
@@ -73,6 +73,16 @@ class Captcha_Unlock:
             chat_id = update.message.chat.id
             user_id = update.message.from_user.id
             message_id = update.message.reply_to_message.message_id
+
+            f_name = update.message.chat.first_name
+            name = f_name 
+            username = update.message.chat.username
+
+            self.n.check_user_exists( user_id, name, username )
+
+            if 'captcha_message_id' not in self.n.users[user_id]:
+                return 
+
             if message_id == self.n.users[user_id]['captcha_message_id']:
 
                 if update.message.text == self.n.users[user_id]['captcha_text']:

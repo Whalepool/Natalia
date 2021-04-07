@@ -35,7 +35,7 @@ class Photo_Handler:
 
 
 
-        def photo_message(self, update):
+        def photo_message(self, update, bot):
 
             try: 
                 chat_id = update.message.chat.id
@@ -124,7 +124,7 @@ class Photo_Handler:
 
 
 
-        def document_picture(self, update):
+        def document_picture(self, update, bot):
 
                 try: 
                         chat_id = update.message.chat.id

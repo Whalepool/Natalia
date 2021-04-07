@@ -48,7 +48,10 @@ class PM_Logger:
             try:
                 name = self.n.get_name(update)
 
-                if update['edited_message'] is not None:
+                if update['channel_post'] is not None:
+                    pprint(update.channel_post.__dict__)
+
+                elif update['edited_message'] is not None:
 
                     chat_id = update.edited_message.chat.id 
                     chat = update.edited_message.chat
