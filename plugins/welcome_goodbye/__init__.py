@@ -51,8 +51,10 @@ class Welcome_Goodbye:
                 chat_id    = update.message.chat.id
                 chat_link  = update.message.chat.username 
                 
-                try: 
+                try:
                     name = update.message.new_chat_members[lenchatmembers-1].username
+                    if name == None:
+                        name = update.message.new_chat_members[lenchatmembers-1].first_name
                 except Exception:
                     name =  update.message.new_chat_members[lenchatmembers-1].first_name
  

@@ -37,6 +37,7 @@ class URL_Forwarder:
         furlcnt = re.findall(self.n.config['forwarding_urls'], update.message.text)
         forward = False 
         if len(furlcnt) > 0:
+            log.print('Forwarding url from %s to %s' % (chat_id, feed_room_id))
             forward = feed_room_id 
         else:
             forward = 61697695
