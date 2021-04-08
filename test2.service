@@ -1,0 +1,16 @@
+[Unit]
+Description=pof bot
+After=network.target
+
+[Service]
+#Environment=
+User=dao
+Group=dao
+WorkingDirectory=/home/dao/proof_of_holdings/backend
+ExecStart=/home/dao/.cache/pypoetry/virtualenvs/bot-ADzpj5Q3-py3.8/bin/python -m bot.pyro
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

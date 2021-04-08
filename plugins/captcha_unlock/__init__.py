@@ -56,7 +56,7 @@ class Captcha_Unlock:
             fpath = 'data/tmp/captcha_%s.png' % user_id 
             text, _ = self.captcha.write(fpath)
             
-            log.print('Send captcha to %s with captcha text %s' % (user_id, text) 
+            log.print('Send captcha to %s with captcha text %s' % (user_id, text) )
             photo_msg = self.n.bot.send_photo(chat_id, photo=open(fpath, 'rb'), reply_markup=ForceReply(force_reply=True))
  
             info.update( {'captcha_text': text, 'captcha_message_id': photo_msg.message_id })

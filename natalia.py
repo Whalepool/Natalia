@@ -1425,10 +1425,10 @@ def sticker_message(bot, update):
 
 		pprint('STICKER')
 		
+		pprint(update.message.sticker.__dict__)
 		sticker_id = update.message.sticker.file_id
 		
 		# file = bot.getFile(sticker_id)
-		pprint(update.message.sticker.__dict__)
 		# pprint(file.__dict__)
 		
 		if username != None:

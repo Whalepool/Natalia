@@ -22,7 +22,7 @@ class Users:
         db_update = False 
 
         for k,v in info.items():
-            pprint('%s - %s' % (k, v))
+            # pprint('%s - %s' % (k, v))
             self.users[user_id][k] = v
             if k not in self.users[user_id]:
                 db_update = True 
@@ -40,7 +40,7 @@ class Users:
         
 
     def update_user_room( self, user_id, chat_id, status ):
-        print('update_user_room')
+        # print('update_user_room')
         if 'rooms' not in self.users[user_id]:
             self.users[user_id]['rooms'] = {}
 
@@ -56,14 +56,14 @@ class Users:
         return 
 
     def del_user_room( self, user_id, chat_id ):
-        print('del user _room')
+        # print('del user _room')
         if 'rooms' not in self.users[user_id]:
-            print('rooms not in users info.. ')
+            # print('rooms not in users info.. ')
             return
 
         if str(chat_id) not in self.users[user_id]['rooms']:
-            print(str(chat_id)+' not in rooms.. ')
-            pprint(self.users[user_id]['rooms'])
+            # print(str(chat_id)+' not in rooms.. ')
+            # pprint(self.users[user_id]['rooms'])
             return
 
         del self.users[user_id]['rooms'][str(chat_id)]
