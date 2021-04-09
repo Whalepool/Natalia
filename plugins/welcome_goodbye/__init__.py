@@ -118,8 +118,11 @@ class Welcome_Goodbye:
                         muting_days = self.n.config['room_profile_pic_muting_days']
 
                         # If a per room setting is longer duration than muting without profile pic duration, then use that instead
-                        if room_data['restrict_new_users_days'] > self.n.config['room_profile_pic_muting_days']:
-                            muting_days = room_data['restrict_new_users_days']
+                        try: 
+                            if room_data['restrict_new_users_days'] > self.n.config['room_profile_pic_muting_days']:
+                                muting_days = room_data['restrict_new_users_days']
+                        except Exception: 
+                            pass 
 
 
                         now = datetime.datetime.now()
