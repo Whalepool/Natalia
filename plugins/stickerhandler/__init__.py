@@ -56,6 +56,7 @@ class Sticker_Handler:
 
             info = { 'user_id': user_id, 'chat_id': chat_id, 'message_id': message_id, 'sticker_id': sticker_id, 'timestamp': timestamp }
             self.n.db.stickers.insert(info)
+            self.n.check_user_exists( user_id, name, update.message.from_user.username )
             self.n.update_user( user_id, {'last_sticker': sticker_id } )
             
 
