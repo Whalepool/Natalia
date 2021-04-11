@@ -146,6 +146,7 @@ class Welcome_Goodbye:
 
                 # User has a profile pic: Check. 
                 # Are we auto restricting new users ? 
+                restrict = True 
                 try : 
                     if 'restrict_new_users_days' in room_data:
                         # Log it
