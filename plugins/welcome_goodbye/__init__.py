@@ -23,6 +23,7 @@ class Welcome_Goodbye:
             self.n    = Natalia 
             self.data = self.n.config['plugins'][plugin_index]['data']
             self.check_config_integrity()
+            self.last_joined_timer = { } 
 
             ##############################################
             # END default, begin plugin
@@ -37,12 +38,12 @@ class Welcome_Goodbye:
 
         def new_chat_member(self, update, callback):
             """ Welcomes new chat member """
-            
-            pprint('New chat member %s ' % (__file__ ))
-            pprint(update.__dict__)
-            pprint(update.message.__dict__)
-            pprint(update.message.new_chat_members[0].__dict__)
-
+#            
+#            pprint('New chat member %s ' % (__file__ ))
+#            pprint(update.__dict__)
+#            pprint(update.message.__dict__)
+#            pprint(update.message.new_chat_members[0].__dict__)
+#
             try: 
 
                 lenchatmembers = len(update.message.new_chat_members)
@@ -51,13 +52,33 @@ class Welcome_Goodbye:
                 chat_id    = update.message.chat.id
                 chat_link  = update.message.chat.username 
 
-                try:
-                    log.print('Logging of joining of room... ')
-                    self.n.add_room_join( message_id, chat_id, user_id )
-                except Exception:
-                    log.error('Unable to log join of room')
+                spam_auto_mute = False
 
-                if self.n.config['lockdown'] == True:
+                if chat_id not in self.last_joined_timer:
+                    self.last_joined_timer[chat_id] = int(time.time())
+                else:
+                    # Check how long ago the last join was ..  
+                    last_join_time = self.last_joined_timer[chat_id] 
+                    now = int(time.time())
+
+                    if (now - last_join_time) < self.n.config['anti_spam_join_timer_seconds']:
+                        log.error('User %s is joining %s within %s seconds since last join, anti spam auto muting' % (user_id, chat_id, (now - last_join_time)))
+                        spam_auto_mute = True 
+
+                # Reset the spam timer 
+                self.last_joined_timer[ chat_id ] = int(time.time())
+
+                try:
+                    if self.n.config['lockdown'] == True:
+                        log.error('Lockdown mode enabled: restricting %s in %s' % (user_id, chat_id))
+                        spam_auto_mute = True
+                except Exception:
+                    pass 
+
+
+                if spam_auto_mute == True:
+
+                    log.error('Auto spam muting %s in %s' % (user_id, chat_id))
 
                     now = datetime.datetime.now()
                     rd = relativedelta(days=400)
@@ -69,6 +90,12 @@ class Welcome_Goodbye:
                     return 
 
 
+                try:
+                    self.n.rooms_log_join( message_id, chat_id, user_id )
+                except Exception as e:
+                    pprint(e)
+                    log.error('Unable to log join of room')
+
                 
                 try:
                     name = update.message.new_chat_members[lenchatmembers-1].username
@@ -76,7 +103,7 @@ class Welcome_Goodbye:
                         name = update.message.new_chat_members[lenchatmembers-1].first_name
                 except Exception:
                     name =  update.message.new_chat_members[lenchatmembers-1].first_name
- 
+
                 # Bot was added to a group chat
                 joiner_is_self = False 
                 if name == self.n.config['bot_name']:
@@ -84,9 +111,10 @@ class Welcome_Goodbye:
 
                 self.n.check_user_exists( user_id, name,  update.message.new_chat_members[lenchatmembers-1].username )
 
+
                 # Is a valid room we have settings for 
                 if chat_id not in self.n.config['rooms']:
-                    log.error('New chat memeber in room '+str(chat_id)+' which is not in the rooms config')
+                    log.error('New chat member in room '+str(chat_id)+' which is not in the rooms config')
 
                     # Get the chat info 
                     chat_info = self.n.bot.getChat(chat_id)
@@ -235,12 +263,13 @@ class Welcome_Goodbye:
                     # Reply with the welcome message
                     name = helpers.escape_markdown(name)
                     msg = welcome_msg.format(name=name)
-                    msg = update.message.reply_text(msg)
-
-                    # Store this reply message_id as the last one we should delete when msging in public chats 
-                    if isinstance(msg.message_id, int):
-                        self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
-
+                    try:
+                        msg = update.message.reply_text(msg)
+                        # Store this reply message_id as the last one we should delete when msging in public chats 
+                        if isinstance(msg.message_id, int):
+                            self.n.config['rooms'][chat_id]['last_room_self_msg'] = msg.message_id
+                    except Exception:
+                        log.error('Unable to reply to message, maybe original message has been deleted') 
 
 
 

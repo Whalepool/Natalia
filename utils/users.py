@@ -12,9 +12,18 @@ class Users:
 
     def __init__(self):
         self.users = {}
+        self.admins = []
+        self.admin_room = None
+
         res = list(self.db.users.find())
         for u in res: 
             self.users[ u['user_id'] ] = u
+
+        for u in self.config['plugins']:
+            if u['name'] == 'admins':
+                self.admins = u['data']['users']
+                self.admin_room = u['data']['admin_room_id']
+
 
        
     def update_user( self, user_id, info ):

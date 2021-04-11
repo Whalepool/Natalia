@@ -18,17 +18,85 @@ class Admins:
                 self.data = self.n.config['plugins'][plugin_index]['data']
                 self.check_config_integrity()
 
+                self.purge_start = None 
+
                 ##############################################
                 # END default, begin plugin
                 ##############################################
                 self.n.admins = self.data['users']
 
-                self.reply_command_regex = r"\/(ban|unban|readonly|nogifs)(?:\s+)([\dA-Za-z]+)"
-                self.n.dp.add_handler(MessageHandler( (Filters.reply & Filters.regex(self.reply_command_regex)), self.admin_replies), group=priority_index)
-                # self.n.dp.add_handler(MessageHandler( (Filters.reply), self.admin_replies), group=priority_index)
+                # self.reply_command_regex = r"\/(ban|unban|readonly|nogifs)(?:\s+)([\dA-Za-z]+)"
+                # self.n.dp.add_handler(MessageHandler( (Filters.reply & Filters.regex(self.reply_command_regex)), self.admin_replies), group=priority_index)
+                
+                self.reply_command_regex = r"\/purgejoins"
+                self.n.dp.add_handler(MessageHandler( (Filters.reply & Filters.regex(self.reply_command_regex)), self.purge_joins), group=priority_index)
 
 
+        def purge_joins(self, update, bot):
 
+            
+            attempt_user_id = update.message.from_user.id
+            
+            self.purge_start = { 
+                'message_id': update.message.reply_to_message.message_id,
+                'chat_id': update.message.reply_to_message.chat.id
+            }
+                
+            try: 
+                room_data = self.n.config['rooms'][update.message.reply_to_message.chat.id]
+                chat_name = room_data['chat_name']
+            except Exception as e:
+                pprint(e)
+                chat_name = chat_id 
+
+            try: 
+                if attempt_user_id not in self.n.admins:
+                    log.error('Invalid purge attempt from %s(%s) in %s(%s)' % (
+                        update.message.from_user.username,
+                        attempt_user_id,
+                        update.message.chat.id,
+                        chat_name
+                    ))
+                    return 
+            except Exception as e:
+                pprint(e)
+                pass 
+
+
+            try:
+                action = list(self.n.db.welcome_joins.find({'message_id': { '$gt': self.purge_start['message_id'] }, 'chat_id': self.purge_start['chat_id']}))
+
+                now = datetime.datetime.now()
+                rd = relativedelta(days=400)
+                perms = ChatPermissions(can_send_messages=False, can_send_media_messages=False, can_send_polls=False, can_send_other_messages=False, can_add_web_page_previews=False, can_change_info=False, can_invite_users=True, can_pin_messages=False)
+                for a in action:
+                    try:
+                        if a['user_id'] not in self.n.admins:
+                            self.n.bot.restrict_chat_member( a['chat_id'], a['user_id'], perms, until_date=(now + rd))      
+                            log.print('PurgeJoins: restricting user %s in %s(%s)' % ( a['user_id'], chat_name, a['chat_id']))
+                        else:
+                            log.error('PurgeJoins: skipping restricting user %s as user is an admin' % (a['user_id']))
+                        
+                    except Exception as e:
+                        log.error('PurgeJoins: Unable to restrict chat member %s in %s(%s), insufficient permissions' % (a['user_id'],chat_name, a['chat_id']))
+
+
+                    try:
+
+                        self.n.bot.delete_message(chat_id=a['chat_id'], message_id=a['message_id'])
+                        log.print('PurgeJoins: Deleting join message of user %s in %s(%s)' % (a['user_id'], chat_name, a['chat_id']))
+
+                        self.db.welcome_joins.delete({'message_id':a['message_id'],'chat_id':a['chat_id']})
+
+                    except Exception as e:
+                        log.error('PurgeJoins: Unable to delete message %s in %s(%s), maybe already deleted/permissions' % (a['message_id'], chat_name, a['chat_id']))
+
+
+            except Exception as e:
+                pprint(e)
+                log.error('Error purging joins')
+
+#
         # def start(self, bot, update):
 
         #       user_id = update.message.from_user.id 

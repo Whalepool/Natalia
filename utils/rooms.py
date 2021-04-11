@@ -5,7 +5,7 @@ from os.path import basename
 import traceback 
 from pprint import pprint 
 from utils.str import Str, log
-
+import time 
 
 class Rooms:
 
@@ -17,10 +17,12 @@ class Rooms:
             return True 
 
 
-        def add_join(self, message_id, chat_id, user_id ):
-
-            info = { 'message_id': message_id, 'chat_id': chat_id, 'user_id': user_id }
-            self.n.db.welcome_joins.insert(info)
+        def rooms_log_join(self, message_id, chat_id, user_id ):
+            
+            timestamp = int(time.time())
+            info = { 'message_id': message_id, 'chat_id': chat_id, 'user_id': user_id, 'timestamp': timestamp }
+            self.db.welcome_joins.insert(info)
+            return True 
 
         def rooms_clear_last_self_msg(self, chat_id):
 
