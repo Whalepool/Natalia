@@ -25,6 +25,7 @@ class Admins:
 
                 self.reply_command_regex = r"\/(ban|unban|readonly|nogifs)(?:\s+)([\dA-Za-z]+)"
                 self.n.dp.add_handler(MessageHandler( (Filters.reply & Filters.regex(self.reply_command_regex)), self.admin_replies), group=priority_index)
+                # self.n.dp.add_handler(MessageHandler( (Filters.reply), self.admin_replies), group=priority_index)
 
 
 
@@ -41,6 +42,7 @@ class Admins:
 
         def admin_replies(self, update, bot):
 
+                print('here!!!')
 
                 chat_id = update.message.chat.id
                 if  chat_id not in [-1001223115449, -238862165]:

@@ -38,10 +38,10 @@ class Welcome_Goodbye:
         def new_chat_member(self, update, callback):
             """ Welcomes new chat member """
             
-            # pprint('New chat member %s ' % (__file__ ))
-            # pprint(update.__dict__)
-            # pprint(update.message.__dict__)
-            # pprint(update.message.new_chat_members[0].__dict__)
+            pprint('New chat member %s ' % (__file__ ))
+            pprint(update.__dict__)
+            pprint(update.message.__dict__)
+            pprint(update.message.new_chat_members[0].__dict__)
 
             try: 
 
@@ -50,6 +50,25 @@ class Welcome_Goodbye:
                 message_id = update.message.message_id 
                 chat_id    = update.message.chat.id
                 chat_link  = update.message.chat.username 
+
+                try:
+                    log.print('Logging of joining of room... ')
+                    self.n.add_room_join( message_id, chat_id, user_id )
+                except Exception:
+                    log.error('Unable to log join of room')
+
+                if self.n.config['lockdown'] == True:
+
+                    now = datetime.datetime.now()
+                    rd = relativedelta(days=400)
+                    perms = ChatPermissions(can_send_messages=False, can_send_media_messages=False, can_send_polls=False, can_send_other_messages=False, can_add_web_page_previews=False, can_change_info=False, can_invite_users=True, can_pin_messages=False)
+                    self.n.bot.restrict_chat_member(chat_id, user_id, perms, until_date=(now + rd))        
+
+                    self.n.bot.delete_message(chat_id=chat_id, message_id=message_id)
+
+                    return 
+
+
                 
                 try:
                     name = update.message.new_chat_members[lenchatmembers-1].username

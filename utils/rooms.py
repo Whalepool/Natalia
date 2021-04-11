@@ -17,7 +17,10 @@ class Rooms:
             return True 
 
 
+        def add_join(self, message_id, chat_id, user_id ):
 
+            info = { 'message_id': message_id, 'chat_id': chat_id, 'user_id': user_id }
+            self.n.db.welcome_joins.insert(info)
 
         def rooms_clear_last_self_msg(self, chat_id):
 
